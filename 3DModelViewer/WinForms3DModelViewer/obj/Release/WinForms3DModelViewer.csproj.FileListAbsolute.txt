@@ -1,0 +1,9 @@
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\bin\Release\WinForms3DModelViewer.exe.config
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\bin\Release\WinForms3DModelViewer.exe
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\bin\Release\WinForms3DModelViewer.pdb
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\obj\Release\WinForms3DModelViewer.csprojAssemblyReference.cache
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\obj\Release\WinForms3DModelViewer.MainForm.resources
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\obj\Release\WinForms3DModelViewer.Properties.Resources.resources
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\obj\Release\WinForms3DModelViewer.csproj.GenerateResource.cache
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\obj\Release\WinForms3DModelViewer.exe
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\WinForms3DModelViewer\obj\Release\WinForms3DModelViewer.pdb

@@ -1,0 +1,17 @@
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\bin\Release\3DModelViewer.exe.config
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\bin\Release\3DModelViewer.exe
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\bin\Release\3DModelViewer.pdb
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\MainWindow.g.cs
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\App.g.cs
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\3DModelViewer_MarkupCompile.cache
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\3DModelViewer_MarkupCompile.lref
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\MainWindow.baml
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\3DModelViewer.g.resources
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\_3DModelViewer.Properties.Resources.resources
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\3DModelViewer.csproj.GenerateResource.cache
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\3DModelViewer.exe
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\3DModelViewer.pdb
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\bin\Release\System.Numerics.Vectors.dll
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\bin\Release\System.Numerics.Vectors.xml
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\3DModelViewer.csprojAssemblyReference.cache
+D:\Study\University\7 term\AKG\3DModelViewer\3DModelViewer\3DModelViewer\obj\Release\3DModelViewer.csproj.CopyComplete

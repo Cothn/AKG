@@ -1,0 +1,22 @@
+﻿<Window x:Class="_3DModelViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:_3DModelViewer"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="684" Width="852">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Canvas x:Name="DrawField" Margin="10,10,304,85"/>
+        <Button x:Name="Upload" Content="Upload" Margin="0,10,11,0" VerticalAlignment="Top" Click="button_Click" Height="20" HorizontalAlignment="Right" Width="101"/>
+        <Button x:Name="DecreaseScaleButton" Content="-" Margin="0,35,10,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="40" Click="DecreaseScaleButton_Click"/>
+        <Button x:Name="RotateYLeftButtton" Content="&lt;" Margin="0,60,71,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="41" Click="RotateYLeftButtton_Click"/>
+        <Button x:Name="button1_Copy1" Content="Button" Margin="747,94,10,0" VerticalAlignment="Top" Height="20"/>
+        <Button x:Name="IncreaseScaleButton" Content="+" Margin="0,35,71,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="41" Click="IncreaseScaleButton_Click"/>
+        <Button x:Name="RotateYRightButtton" Content="&gt;" Margin="0,60,9,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="41" Click="RotateYRightButtton_Click"/>
+
+    </Grid>
+</Window>
