@@ -22,8 +22,7 @@ namespace WinForms3DModelViewer
         Point lastPoint = Point.Empty;//Point.Empty represents null for a Point object
         bool isMouseDown = false;
 
-        Vector3 viewPoint = new Vector3(0, 0, 5);
-        Vector3 eye = new Vector3(0, 0, 2);
+        Vector3 viewPoint = new Vector3(0, 0, 4);
         float delta = 0.1f;
         float aDelta = 1f;
 
@@ -80,11 +79,11 @@ namespace WinForms3DModelViewer
             //mainMatrix = translation * viewerMatrix * projectionMatrix;
             //mainMatrix = GetMVP();
             //TransformVectors(mainMatrix);
-
+            TransformVectors(mainMatrix);
             for (int i = 0; i < vertices.Count; i++)
             {
                 //vertices[i] = Vector4.Transform(vertices[i], transformMatrix);
-                vertices[i] = Vector4.Transform(vertices[i], mainMatrix);
+                //vertices[i] = Vector4.Transform(vertices[i], mainMatrix);
                 vertices[i] /= vertices[i].W;
             }
 
@@ -104,32 +103,32 @@ namespace WinForms3DModelViewer
                     j--;
                 }
             }
-
             TransformVectors(viewPortMatrix);
-        }
 
-        public void ToWorldCoordinates()
-        {
         }
+        
 
         public Matrix4x4 ToViewerCoordinates(Vector3 eye, Vector3 target, Vector3 up)
         {
             var zAxis = Vector3.Normalize(eye - target);
             var xAxis = Vector3.Normalize(Vector3.Cross(up, zAxis));
-            var yAxis = Vector3.Normalize(Vector3.Cross(zAxis, xAxis));  //up;
+            var yAxis = Vector3.Normalize(up);  //up;
 
-            var viewerMatrix = new Matrix4x4(xAxis.X, xAxis.Y, xAxis.Z, 0,
-                                             yAxis.X, yAxis.Y, yAxis.Z, 0,
-                                             zAxis.X, zAxis.Y, zAxis.Z, 0,
-                                                   0, 0, 0, 1);
 
-            var translation = Matrix4x4.CreateTranslation(new Vector3(-Vector3.Dot(xAxis, eye), -Vector3.Dot(yAxis, eye), -Vector3.Dot(zAxis, eye)));
+            var viewerMatrix = new Matrix4x4(
+                xAxis.X, yAxis.X, zAxis.X, 0,
+                xAxis.Y, yAxis.Y, zAxis.Y, 0,
+                xAxis.Z, yAxis.Z, zAxis.Z, 0,
+                -Vector3.Dot(xAxis, eye), -Vector3.Dot(yAxis, eye), -Vector3.Dot(zAxis, eye), 1);
+            
 
-            //Matrix4x4
-
-            //return Matrix4x4.CreateLookAt(eye, target, up);
-
-            return viewerMatrix * translation;
+            //var viewerMatrix = new Matrix4x4(
+            //11, 12, 13, 14,
+            //21, 22, 23, 24,
+            //31, 32, 33, 34,
+            //41, 42, 43, 44);
+            
+            return viewerMatrix;
         }
 
         public Matrix4x4 ToProjectionCoordinates()
@@ -146,10 +145,10 @@ namespace WinForms3DModelViewer
 
             var projectionMatrix = new Matrix4x4(m00, 0, 0, 0,
                                                    0, m11, 0, 0,
-                                                   0, 0, m22, m23,
-                                                   0, 0, -1, 0);
-
-            return Matrix4x4.Transpose(projectionMatrix);
+                                                   0, 0, m22, -1,
+                                                   0, 0, m23, 0);
+            
+            return projectionMatrix;
         }
 
         public Matrix4x4 ToViewPortCoordinates()
@@ -164,20 +163,16 @@ namespace WinForms3DModelViewer
             var m11 = -height / 2;
             var m03 = xMin + (width / 2);
             var m13 = yMin + (height / 2);
-            var m22 = 255 / 2f;
+            var m22 = 255/2f;
 
-            var viewerMatrix = new Matrix4x4(m00, 0, 0, m03,
-                                               0, m11, 0, m13,
-                                               0, 0, m22, m22,
-                                               0, 0, 0, 1);
-
-            viewerMatrix.Translation = new Vector3(m03, m13, m22);
-
-            //TransformVectors(viewerMatrix);
-
+            var viewerMatrix = new Matrix4x4(m00, 0, 0, 0,
+                                               0, m11, 0, 0,
+                                               0, 0, m22, 0,
+                                               m03, m13, m22, 1);
+            
             return viewerMatrix;
         }
-
+        
         public void DrawLine(int x1, int y1, int x2, int y2, Graphics bm)
         {
             float x = x1;
@@ -197,7 +192,8 @@ namespace WinForms3DModelViewer
                 y += stepy;
             }
         }
-
+        
+        //отрисовка модели
         public void Draw()
         {
 
@@ -236,14 +232,14 @@ namespace WinForms3DModelViewer
 
             pictureBoxPaintArea.Image = bm;
         }
+        
 
-
+        
+        
         public void TransformVectors(Matrix4x4 transformMatrix)
         {
             for (int i = 0; i < vertices.Count; i++)
             {
-                //var temp = Vector4.Transform(new Vector4(vertices[i],1), transformMatrix);
-                //vertices[i] = Vector4.Transform(vertices[i], transformMatrix);
                 vertices[i] = Vector4.Transform(vertices[i], transformMatrix);
             }
         }
@@ -262,11 +258,10 @@ namespace WinForms3DModelViewer
 
         public void MoveVectors(Vector3 vector)
         {
-            var translationMatrix = new Matrix4x4(1, 0, 0, vector.X,
-                                                  0, 1, 0, vector.Y,
-                                                  0, 0, 1, vector.Z,
-                                                  0, 0, 0, 1);
-            translationMatrix.Translation = vector;
+            var translationMatrix = new Matrix4x4(1, 0, 0, 0,
+                                                  0, 1, 0, 0,
+                                                  0, 0, 1, 0,
+                                                  vector.X, vector.Y, vector.Z, 1);
 
             TransformVectors(translationMatrix);
         }
@@ -278,8 +273,8 @@ namespace WinForms3DModelViewer
             var cos = (float)Math.Cos(angle);
 
             var rotateMatrix = new Matrix4x4(1, 0, 0, 0,
-                                             0, cos, -sin, 0,
-                                             0, sin, cos, 0,
+                                             0, cos, sin, 0,
+                                             0, -sin, cos, 0,
                                              0, 0, 0, 1);
 
             TransformVectors(rotateMatrix);
@@ -291,9 +286,9 @@ namespace WinForms3DModelViewer
             var sin = (float)Math.Sin(angle);
             var cos = (float)Math.Cos(angle);
 
-            var rotateMatrix = new Matrix4x4(cos, 0, sin, 0,
+            var rotateMatrix = new Matrix4x4(cos, 0, -sin, 0,
                                                0, 1, 0, 0,
-                                             -sin, 0, cos, 0,
+                                             sin, 0, cos, 0,
                                                0, 0, 0, 1);
 
             TransformVectors(rotateMatrix);
@@ -305,19 +300,12 @@ namespace WinForms3DModelViewer
             var sin = (float)Math.Sin(angle);
             var cos = (float)Math.Cos(angle);
 
-            var rotateMatrix = new Matrix4x4(cos, -sin, 0, 0,
-                                             sin, cos, 0, 0,
+            var rotateMatrix = new Matrix4x4(cos, sin, 0, 0,
+                                             -sin, cos, 0, 0,
                                               0, 0, 1, 0,
                                               0, 0, 0, 1);
 
             TransformVectors(rotateMatrix);
-        }
-
-        public static void Swap<T>(ref T a, ref T b)
-        {
-            T t = a;
-            a = b;
-            b = t;
         }
 
         private void _MouseWheel(object sender, MouseEventArgs e)

@@ -34,24 +34,22 @@ namespace WinForms3DModelViewer
                                      .ToArray();
 
                     vertex.Add(new Vector4(coords[0], coords[1], coords[2], coords.Length > 3 ? coords[3] : 1));
-                    continue;
                 }
-                if (line.StartsWith("vt"))
-                {
-                }
-                if (line.StartsWith("vn"))
-                {
-                }
-                if (line.StartsWith("f "))
+                else if (line.StartsWith("f "))
                 {
                     var coords = line.Split(' ')
-                                     .Skip(1)
-                                     .Select(c => c.Split('/').First())
-                                     .Select(c => Int32.Parse(c, NumberStyles.Any, ci))
-                                     .ToArray();
+                        .Skip(1)
+                        .Select(c => c.Split('/').First())
+                        .Select(c => Int32.Parse(c))
+                        .ToArray();
 
                     poligons.Add(coords);
-                    continue;
+                }
+                else if (line.StartsWith("vn"))
+                {
+                }
+                else if (line.StartsWith("vt"))
+                {
                 }
             }
 
