@@ -27,3 +27,13 @@ D:\RepositHub\АКГ\3DModelViewer\WinForms3DModelViewer\bin\Debug\WinForms3DMod
 D:\RepositHub\АКГ\3DModelViewer\WinForms3DModelViewer\bin\Debug\WinForms3DModelViewer.pdb
 D:\RepositHub\АКГ\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.csprojAssemblyReference.cache
 D:\RepositHub\АКГ\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.csproj.CoreCompileInputs.cache
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\bin\Debug\WinForms3DModelViewer.exe.config
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\bin\Debug\WinForms3DModelViewer.exe
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\bin\Debug\WinForms3DModelViewer.pdb
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.csprojAssemblyReference.cache
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.MainForm.resources
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.Properties.Resources.resources
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.csproj.GenerateResource.cache
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.csproj.CoreCompileInputs.cache
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.exe
+D:\RepositHub\AKG\3DModelViewer\WinForms3DModelViewer\obj\Debug\WinForms3DModelViewer.pdb

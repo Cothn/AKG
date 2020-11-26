@@ -42,7 +42,7 @@ namespace WinForms3DModelViewer
         private void MainForm_Load(object sender, EventArgs e)
         {
             ObjParser parser = new ObjParser();
-            (originalVertices, originalPoligons) = parser.Parse(@"D:\RepositHub\АКГ\Head\Model.obj");
+            (originalVertices, originalPoligons) = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
             Transform();
         }
 
