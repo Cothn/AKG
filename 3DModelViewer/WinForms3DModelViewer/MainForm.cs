@@ -29,8 +29,7 @@ namespace WinForms3DModelViewer
         float xRotation = 0;
         float yRotation = 0;
         float zRotation = 0;
-
-        Matrix4x4 viewPortMatrix;
+        
 
         public MainForm()
         {
@@ -61,29 +60,19 @@ namespace WinForms3DModelViewer
             up = Vector3.Transform(up, rm);
 
 
-            //Place and transform model from local to world coordinates
+            //Place and transform model from local to Viewer coordinates
             var viewerMatrix = ToViewerCoordinates(eye, target, up);
-            //var viewerMatrix = Matrix4x4.CreateLookAt(eye, target, up);
-            //TransformVectors(viewerMatrix);
 
-            //var translation = Matrix4x4.CreateTranslation(-viewPoint);
-            //TransformVectors(translation);
-
-            //Create Projection matrix
             var projectionMatrix = ToProjectionCoordinates();
 
             var viewPortMatrix = ToViewPortCoordinates();
 
             var mainMatrix = viewerMatrix * projectionMatrix;
-            //mainMatrix = projectionMatrix;
-            //mainMatrix = translation * viewerMatrix * projectionMatrix;
-            //mainMatrix = GetMVP();
-            //TransformVectors(mainMatrix);
+
             TransformVectors(mainMatrix);
+            // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
             {
-                //vertices[i] = Vector4.Transform(vertices[i], transformMatrix);
-                //vertices[i] = Vector4.Transform(vertices[i], mainMatrix);
                 vertices[i] /= vertices[i].W;
             }
 
@@ -98,7 +87,7 @@ namespace WinForms3DModelViewer
                 if (poligon.Any(i => vertices[i - 1].Z < 0
                                      || vertices[i - 1].Z > 1))
                 {
-                    Console.WriteLine("");
+                    //Console.WriteLine("1");
                     poligons.RemoveAt(j);
                     j--;
                 }
@@ -210,10 +199,7 @@ namespace WinForms3DModelViewer
 
                 foreach (var poligon in poligons)
                 {
-
-                    //if (poligon.Any(i => vertices[i-1].X <= -1 || vertices[i-1].X >= 1 || vertices[i-1].Y <= -1 || vertices[i-1].Y >= 1 || vertices[i-1].Z <= 0 || vertices[i-1].Z >= 1))
-                    //    continue;
-
+                    
 
                     for (int i = 0; i < poligon.Length; i++)
                     {
