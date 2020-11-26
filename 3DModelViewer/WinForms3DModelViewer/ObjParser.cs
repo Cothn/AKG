@@ -16,8 +16,8 @@ namespace WinForms3DModelViewer
         {
             var lines = File.ReadAllLines(filePath);
 
-            var vertex = new List<Vector4>();
-            var textureVertex = new List<Vector3>();
+            var vectors = new List<Vector4>();
+            var textureVectors = new List<Vector3>();
             var normalVectors = new List<Vector3>();
             var poligons = new List<int[]>();
             CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
@@ -33,7 +33,7 @@ namespace WinForms3DModelViewer
                                      .Select(c => float.Parse(c,NumberStyles.Any, ci))
                                      .ToArray();
 
-                    vertex.Add(new Vector4(coords[0], coords[1], coords[2], coords.Length > 3 ? coords[3] : 1));
+                    vectors.Add(new Vector4(coords[0], coords[1], coords[2], coords.Length > 3 ? coords[3] : 1));
                 }
                 else if (line.StartsWith("f "))
                 {
@@ -53,7 +53,7 @@ namespace WinForms3DModelViewer
                 }
             }
 
-            return (vertex, poligons);
+            return (vectors, poligons);
 
         }
 

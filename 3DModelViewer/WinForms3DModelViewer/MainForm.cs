@@ -82,10 +82,9 @@ namespace WinForms3DModelViewer
             {
                 var poligon = poligons[j];
 
-                //TODO Remove polygon cut with proj matrix
+                // Remove polygon cut with proj matrix
 
-                if (poligon.Any(i => vertices[i - 1].Z < 0
-                                     || vertices[i - 1].Z > 1))
+                if (poligon.Any(i => vertices[i - 1].Z < 0 || vertices[i - 1].Z > 1))
                 {
                     //Console.WriteLine("1");
                     poligons.RemoveAt(j);
@@ -296,7 +295,6 @@ namespace WinForms3DModelViewer
 
         private void _MouseWheel(object sender, MouseEventArgs e)
         {
-            //ScaleVectors(1.0f - (e.Delta / 1000.0f));
 
             if ((viewPoint.Z + (e.Delta / 700.0f)) < 0)
             {
@@ -335,7 +333,7 @@ namespace WinForms3DModelViewer
             if (isMouseDown == true)//check to see if the mouse button is down
             {
 
-                if (lastPoint != Point.Empty)//if our last point is not null, which in this case we have assigned above
+                if (lastPoint != Point.Empty)//if our last point is not null
 
                 {
                     Vector3 v = new Vector3(e.X - lastPoint.X, e.Y - lastPoint.Y, 0);
