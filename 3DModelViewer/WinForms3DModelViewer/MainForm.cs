@@ -19,7 +19,7 @@ namespace WinForms3DModelViewer
         private List<int[]> originalPoligons;
         private List<int[]> poligons;
 
-        Point lastPoint = Point.Empty;//Point.Empty represents null for a Point object
+        Point lastPoint = Point.Empty;
         bool isMouseDown = false;
 
         Vector3 viewPoint = new Vector3(0, 0, 4);
@@ -161,19 +161,19 @@ namespace WinForms3DModelViewer
             return viewerMatrix;
         }
         
-        public void DrawLine(int x1, int y1, int x2, int y2, Graphics bm)
+        public void DrawLine(float x1, float y1, float x2, float y2, Graphics bm)
         {
             float x = x1;
             float y = y1;
-            var dx = Math.Abs(x2 - x1);
-            var dy = Math.Abs(y2 - y1);
+            float dx = Math.Abs(x2 - x1);
+            float dy = Math.Abs(y2 - y1);
             var length = dx >= dy ? dx : dy;
             var stepx = (x2 - x1) / (float)length;
             var stepy = (y2 - y1) / (float)length;
 
             Brush aBrush = (Brush)Brushes.White;
             //bm.FillRectangle(aBrush, x, y, 1, 1);
-            for (int i = 1; i <= length; i++)
+            for (int i = 1; i <= (int)length; i++)
             {
                 bm.FillRectangle(aBrush, x, y, 1, 1);
                 x += stepx;
@@ -227,70 +227,6 @@ namespace WinForms3DModelViewer
             {
                 vertices[i] = Vector4.Transform(vertices[i], transformMatrix);
             }
-        }
-
-        public Matrix4x4 ScaleVectors(float x)
-        {
-            var scaleMatrix = new Matrix4x4(x, 0, 0, 0,
-                                            0, x, 0, 0,
-                                            0, 0, x, 0,
-                                            0, 0, 0, 1);
-
-            TransformVectors(scaleMatrix);
-
-            return scaleMatrix;
-        }
-
-        public void MoveVectors(Vector3 vector)
-        {
-            var translationMatrix = new Matrix4x4(1, 0, 0, 0,
-                                                  0, 1, 0, 0,
-                                                  0, 0, 1, 0,
-                                                  vector.X, vector.Y, vector.Z, 1);
-
-            TransformVectors(translationMatrix);
-        }
-
-        public void RotateXVectors(float degrees)
-        {
-            double angle = Math.PI * degrees / 180.0;
-            var sin = (float)Math.Sin(angle);
-            var cos = (float)Math.Cos(angle);
-
-            var rotateMatrix = new Matrix4x4(1, 0, 0, 0,
-                                             0, cos, sin, 0,
-                                             0, -sin, cos, 0,
-                                             0, 0, 0, 1);
-
-            TransformVectors(rotateMatrix);
-        }
-
-        public void RotateYVectors(float degrees)
-        {
-            double angle = Math.PI * degrees / 180.0;
-            var sin = (float)Math.Sin(angle);
-            var cos = (float)Math.Cos(angle);
-
-            var rotateMatrix = new Matrix4x4(cos, 0, -sin, 0,
-                                               0, 1, 0, 0,
-                                             sin, 0, cos, 0,
-                                               0, 0, 0, 1);
-
-            TransformVectors(rotateMatrix);
-        }
-
-        public void RotateZVectors(float degrees)
-        {
-            double angle = Math.PI * degrees / 180.0;
-            var sin = (float)Math.Sin(angle);
-            var cos = (float)Math.Cos(angle);
-
-            var rotateMatrix = new Matrix4x4(cos, sin, 0, 0,
-                                             -sin, cos, 0, 0,
-                                              0, 0, 1, 0,
-                                              0, 0, 0, 1);
-
-            TransformVectors(rotateMatrix);
         }
 
         private void _MouseWheel(object sender, MouseEventArgs e)
@@ -383,5 +319,71 @@ namespace WinForms3DModelViewer
         {
 
         }
+        
+        /*
+        public Matrix4x4 ScaleVectors(float x)
+        {
+            var scaleMatrix = new Matrix4x4(x, 0, 0, 0,
+                                            0, x, 0, 0,
+                                            0, 0, x, 0,
+                                            0, 0, 0, 1);
+
+            TransformVectors(scaleMatrix);
+
+            return scaleMatrix;
+        }
+
+        public void MoveVectors(Vector3 vector)
+        {
+            var translationMatrix = new Matrix4x4(1, 0, 0, 0,
+                                                  0, 1, 0, 0,
+                                                  0, 0, 1, 0,
+                                                  vector.X, vector.Y, vector.Z, 1);
+
+            TransformVectors(translationMatrix);
+        }
+
+        public void RotateXVectors(float degrees)
+        {
+            double angle = Math.PI * degrees / 180.0;
+            var sin = (float)Math.Sin(angle);
+            var cos = (float)Math.Cos(angle);
+
+            var rotateMatrix = new Matrix4x4(1, 0, 0, 0,
+                                             0, cos, sin, 0,
+                                             0, -sin, cos, 0,
+                                             0, 0, 0, 1);
+
+            TransformVectors(rotateMatrix);
+        }
+
+        public void RotateYVectors(float degrees)
+        {
+            double angle = Math.PI * degrees / 180.0;
+            var sin = (float)Math.Sin(angle);
+            var cos = (float)Math.Cos(angle);
+
+            var rotateMatrix = new Matrix4x4(cos, 0, -sin, 0,
+                                               0, 1, 0, 0,
+                                             sin, 0, cos, 0,
+                                               0, 0, 0, 1);
+
+            TransformVectors(rotateMatrix);
+        }
+
+        public void RotateZVectors(float degrees)
+        {
+            double angle = Math.PI * degrees / 180.0;
+            var sin = (float)Math.Sin(angle);
+            var cos = (float)Math.Cos(angle);
+
+            var rotateMatrix = new Matrix4x4(cos, sin, 0, 0,
+                                             -sin, cos, 0, 0,
+                                              0, 0, 1, 0,
+                                              0, 0, 0, 1);
+
+            TransformVectors(rotateMatrix);
+        }
+*/
     }
 }
