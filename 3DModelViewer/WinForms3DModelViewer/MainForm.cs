@@ -16,8 +16,13 @@ namespace WinForms3DModelViewer
     {
         private List<Vector4> vertices;
         private List<Vector4> originalVertices;
-        private List<int[]> originalPoligons;
-        private List<int[]> poligons;
+        private List<Vector3> normalVertices;
+        private List<Vector3> originalNormalVertices;
+        private List<Vector3> textureVertices;
+        private List<Vector3> originalTextureVertices;
+
+        private List<int[][]> originalPoligons;
+        private List<int[][]> poligons;
 
         Point lastPoint = Point.Empty;
         bool isMouseDown = false;
@@ -40,14 +45,15 @@ namespace WinForms3DModelViewer
         private void MainForm_Load(object sender, EventArgs e)
         {
             ObjParser parser = new ObjParser();
-            (originalVertices, originalPoligons) = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+            (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
+                = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
             Transform();
         }
 
         public void Transform()
         {
             vertices = new List<Vector4>(originalVertices);
-            poligons = new List<int[]>(originalPoligons);
+            poligons = new List<int[][]>(originalPoligons);
 
             var eye = this.viewPoint;
             var target = new Vector3(0, 0, 0);
@@ -84,7 +90,7 @@ namespace WinForms3DModelViewer
 
                 // Remove polygon cut with proj matrix
 
-                if (poligon.Any(i => vertices[i - 1].Z < 0 || vertices[i - 1].Z > 1))
+                if (poligon.Any(i => vertices[i[0] - 1].Z < 0 || vertices[i[0] - 1].Z > 1))
                 {
                     //Console.WriteLine("1");
                     poligons.RemoveAt(j);
@@ -199,11 +205,10 @@ namespace WinForms3DModelViewer
                 foreach (var poligon in poligons)
                 {
                     
-
                     for (int i = 0; i < poligon.Length; i++)
                     {
-                        var k = poligon[i] - 1;
-                        var j = poligon[(i + 1) % poligon.Length] - 1;
+                        var k = poligon[i][0] - 1;
+                        var j = poligon[(i + 1) % poligon.Length][0] - 1;
 
                         var X1 = (vertices[k].X);
                         var X2 = (vertices[j].X);
