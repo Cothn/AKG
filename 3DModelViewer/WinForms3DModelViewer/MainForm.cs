@@ -114,7 +114,7 @@ namespace WinForms3DModelViewer
                         ( vector1.X * vector2.Y -  vector1.Y * vector2.X));
                     var tmp = new Vector3(eye.X - vector1.X, eye.Y - vector1.Y, eye.Z - vector1.Z);
                         tmp.Z = tmp.Z < 0 ? -tmp.Z : tmp.Z;
-                    if (surfaceNormal.X * tmp.X + surfaceNormal.Y * tmp.Y + surfaceNormal.Z * tmp.Z  < -0.0023 )
+                    if (surfaceNormal.X * tmp.X + surfaceNormal.Y * tmp.Y + surfaceNormal.Z * tmp.Z  < -0.00073 )
                     {
                         poligons.RemoveAt(j);
                         j--;
