@@ -166,8 +166,8 @@ namespace WinForms3DModelViewer
             
             return viewerMatrix;
         }
-        
-        public void DrawLine(float x1, float y1, float x2, float y2, Graphics bm)
+
+        public void DrawLine(float x1, float y1, float x2, float y2, Graphics bm, int pointWidth = 2, int pointHeight = 2)
         {
             float x = x1;
             float y = y1;
@@ -178,10 +178,10 @@ namespace WinForms3DModelViewer
             var stepy = (y2 - y1) / (float)length;
 
             Brush aBrush = (Brush)Brushes.White;
-            //bm.FillRectangle(aBrush, x, y, 1, 1);
+
             for (int i = 1; i <= (int)length; i++)
             {
-                bm.FillRectangle(aBrush, x, y, 1, 1);
+                bm.FillRectangle(aBrush, x, y, pointWidth, pointHeight);
                 x += stepx;
                 y += stepy;
             }
@@ -190,6 +190,8 @@ namespace WinForms3DModelViewer
         //отрисовка модели
         public void Draw()
         {
+            var minX = vertices.Min(x => x.X);
+            var maxX = vertices.Max(x => x.X);
 
             var width = pictureBoxPaintArea.Width;
             var height = pictureBoxPaintArea.Height;
@@ -204,7 +206,10 @@ namespace WinForms3DModelViewer
 
                 foreach (var poligon in poligons)
                 {
-                    
+                    float yMax = float.MinValue;
+                    int indexMax = -1;
+                    float yMin = float.MaxValue;
+
                     for (int i = 0; i < poligon.Length; i++)
                     {
                         var k = poligon[i][0] - 1;
@@ -215,8 +220,62 @@ namespace WinForms3DModelViewer
                         var Y1 = (vertices[k].Y);
                         var Y2 = (vertices[j].Y);
 
-                        DrawLine((int)X1, (int)Y1, (int)X2, (int)Y2, gr);
+                        DrawLine(X1, Y1, X2, Y2, gr);
+
+                        if (vertices[k].Y > yMax)
+                        {
+                            indexMax = i;
+                            yMax = vertices[k].Y;
+                        }
+
+                        if (vertices[k].Y < yMin)
+                        {
+                            yMin = vertices[k].Y;
+                        }
                     };
+
+                    //var skylineBegin = new Vector2((float)-width/2, yMax );
+                    //var skylineEnd = new Vector2((float)width/2, yMax);
+
+                    var skylineBegin = new Vector2(minX - 1, yMax);
+                    var skylineEnd = new Vector2(maxX + 1, yMax);
+                     
+                    Vector2 firstEdgeBegin, firstEdgeEnd;
+                    Vector2 secondEdgeBegin, secondEdgeEnd;
+
+                    var indexes = new List<int> {0, 1, 2};
+                    indexes.Remove(indexMax);
+
+                    firstEdgeBegin = new Vector2(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y);
+                    firstEdgeEnd = new Vector2(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y);
+
+                    secondEdgeBegin = new Vector2(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y);
+                    secondEdgeEnd = new Vector2(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y);
+
+                    while (skylineBegin.Y > yMin)
+                    {
+                        if (skylineBegin.Y < firstEdgeBegin.Y)
+                        {
+                            firstEdgeEnd = new Vector2(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y);
+                        }
+
+                        if (skylineBegin.Y < secondEdgeBegin.Y)
+                        {
+                            secondEdgeEnd = new Vector2(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y);
+                        }
+
+                        if (PointsCrossing.ArePointsCrossing(firstEdgeBegin, firstEdgeEnd, skylineBegin, skylineEnd) &&
+                            PointsCrossing.ArePointsCrossing(secondEdgeBegin, secondEdgeEnd, skylineBegin, skylineEnd))
+                        {
+                            var firstPoint = PointsCrossing.CrossingPoint(firstEdgeBegin, firstEdgeEnd, skylineBegin, skylineEnd);
+                            var secondPoint = PointsCrossing.CrossingPoint(secondEdgeBegin, secondEdgeEnd, skylineBegin, skylineEnd);
+
+                            DrawLine(firstPoint.X, firstPoint.Y, secondPoint.X, secondPoint.Y, gr);
+                        }
+
+                        skylineBegin.Y--;
+                        skylineEnd.Y--;
+                    }
                 };
             }
 
