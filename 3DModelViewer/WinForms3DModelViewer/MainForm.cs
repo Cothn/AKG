@@ -68,6 +68,7 @@ namespace WinForms3DModelViewer
 
             //Place and transform model from local to Viewer coordinates
             var viewerMatrix = ToViewerCoordinates(eye, target, up);
+            
 
             var projectionMatrix = ToProjectionCoordinates();
 
@@ -82,8 +83,16 @@ namespace WinForms3DModelViewer
                 vertices[i] /= vertices[i].W;
             }
 
+            removePoligons(poligons, eye, target);
 
 
+            TransformVectors(viewPortMatrix);
+
+
+        }
+
+        public void removePoligons(List<int[][]> poligons, Vector3 eye, Vector3 target)
+        {
             for (int j = 0; j < poligons.Count; j++)
             {
                 var poligon = poligons[j];
@@ -96,9 +105,23 @@ namespace WinForms3DModelViewer
                     poligons.RemoveAt(j);
                     j--;
                 }
+                else
+                {
+                    var vector1 = vertices[poligon[1][0] - 1] - vertices[poligon[0][0] - 1];
+                    var vector2 = vertices[poligon[2][0] - 1] - vertices[poligon[0][0] - 1];
+                    var surfaceNormal = new Vector3(( vector1.Y *  vector2.Z -  vector1.Z * vector2.Y),  
+                        ( vector1.Z * vector2.X - vector1.X *  vector2.Z),  
+                        ( vector1.X * vector2.Y -  vector1.Y * vector2.X));
+                    var tmp = new Vector3(eye.X - vector1.X, eye.Y - vector1.Y, eye.Z - vector1.Z);
+                        tmp.Z = tmp.Z < 0 ? -tmp.Z : tmp.Z;
+                    if (surfaceNormal.X * tmp.X + surfaceNormal.Y * tmp.Y + surfaceNormal.Z * tmp.Z  < -0.0023 )
+                    {
+                        poligons.RemoveAt(j);
+                        j--;
+                    }
+                        
+                }
             }
-            TransformVectors(viewPortMatrix);
-
         }
         
 
@@ -449,5 +472,6 @@ namespace WinForms3DModelViewer
             TransformVectors(rotateMatrix);
         }
 */
+
     }
 }
