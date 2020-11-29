@@ -24,6 +24,8 @@ namespace WinForms3DModelViewer
         private List<int[][]> originalPoligons;
         private List<int[][]> poligons;
 
+        private float[][] zBuffer;
+
         Point lastPoint = Point.Empty;
         bool isMouseDown = false;
 
@@ -161,35 +163,46 @@ namespace WinForms3DModelViewer
 
             var viewerMatrix = new Matrix4x4(m00, 0, 0, 0,
                                                0, m11, 0, 0,
-                                               0, 0, m22, 0,
-                                               m03, m13, m22, 1);
+                                               0, 0, 1, 0,
+                                               m03, m13, 0, 1);
             
             return viewerMatrix;
         }
 
-        public void DrawLine(float x1, float y1, float x2, float y2, Graphics bm, int pointWidth = 2, int pointHeight = 2)
+        public void DrawLine(float x1, float y1, float z1, float x2, float y2, float z2, Graphics bm, int pointWidth = 2, int pointHeight = 2)
         {
             float x = x1;
             float y = y1;
+            float z = z1;
             float dx = Math.Abs(x2 - x1);
             float dy = Math.Abs(y2 - y1);
             var length = dx >= dy ? dx : dy;
-            var stepx = (x2 - x1) / (float)length;
-            var stepy = (y2 - y1) / (float)length;
+            var stepx = (x2 - x1) / length;
+            var stepy = (y2 - y1) / length;
+            var stepz = (z2 - z1) / length;
 
             Brush aBrush = (Brush)Brushes.White;
 
             for (int i = 1; i <= (int)length; i++)
             {
-                bm.FillRectangle(aBrush, x, y, pointWidth, pointHeight);
+                if (zBuffer[(int) y][(int) x] > z)
+                {
+                    zBuffer[(int) y][(int) x] = z;
+
+                    bm.FillRectangle(aBrush, x, y, pointWidth, pointHeight);
+                }
+
                 x += stepx;
                 y += stepy;
+                z += stepz;
             }
         }
         
         //отрисовка модели
         public void Draw()
         {
+            InitializeZBuffer();
+
             var minX = vertices.Min(x => x.X);
             var maxX = vertices.Max(x => x.X);
 
@@ -219,8 +232,10 @@ namespace WinForms3DModelViewer
                         var X2 = (vertices[j].X);
                         var Y1 = (vertices[k].Y);
                         var Y2 = (vertices[j].Y);
+                        var Z1 = (vertices[k].Z);
+                        var Z2 = (vertices[j].Z);
 
-                        DrawLine(X1, Y1, X2, Y2, gr);
+                        DrawLine(X1, Y1, Z1, X2, Y2, Z2, gr);
 
                         if (vertices[k].Y > yMax)
                         {
@@ -234,34 +249,32 @@ namespace WinForms3DModelViewer
                         }
                     };
 
-                    //var skylineBegin = new Vector2((float)-width/2, yMax );
-                    //var skylineEnd = new Vector2((float)width/2, yMax);
 
                     var skylineBegin = new Vector2(minX - 1, yMax);
                     var skylineEnd = new Vector2(maxX + 1, yMax);
-                     
-                    Vector2 firstEdgeBegin, firstEdgeEnd;
-                    Vector2 secondEdgeBegin, secondEdgeEnd;
 
-                    var indexes = new List<int> {0, 1, 2};
+                    Vector3 firstEdgeBegin, firstEdgeEnd;
+                    Vector3 secondEdgeBegin, secondEdgeEnd;
+
+                    var indexes = new List<int> { 0, 1, 2 };
                     indexes.Remove(indexMax);
 
-                    firstEdgeBegin = new Vector2(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y);
-                    firstEdgeEnd = new Vector2(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y);
+                    firstEdgeBegin = new Vector3(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y, vertices[poligon[indexes[0]][0] - 1].Z);
+                    firstEdgeEnd = new Vector3(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y, vertices[poligon[indexMax][0] - 1].Z);
 
-                    secondEdgeBegin = new Vector2(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y);
-                    secondEdgeEnd = new Vector2(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y);
+                    secondEdgeBegin = new Vector3(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y, vertices[poligon[indexes[1]][0] - 1].Z);
+                    secondEdgeEnd = new Vector3(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y, vertices[poligon[indexMax][0] - 1].Z);
 
                     while (skylineBegin.Y > yMin)
                     {
                         if (skylineBegin.Y < firstEdgeBegin.Y)
                         {
-                            firstEdgeEnd = new Vector2(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y);
+                            firstEdgeEnd = new Vector3(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y, vertices[poligon[indexes[1]][0] - 1].Z);
                         }
 
                         if (skylineBegin.Y < secondEdgeBegin.Y)
                         {
-                            secondEdgeEnd = new Vector2(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y);
+                            secondEdgeEnd = new Vector3(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y, vertices[poligon[indexes[0]][0] - 1].Z);
                         }
 
                         if (PointsCrossing.ArePointsCrossing(firstEdgeBegin, firstEdgeEnd, skylineBegin, skylineEnd) &&
@@ -270,12 +283,19 @@ namespace WinForms3DModelViewer
                             var firstPoint = PointsCrossing.CrossingPoint(firstEdgeBegin, firstEdgeEnd, skylineBegin, skylineEnd);
                             var secondPoint = PointsCrossing.CrossingPoint(secondEdgeBegin, secondEdgeEnd, skylineBegin, skylineEnd);
 
-                            DrawLine(firstPoint.X, firstPoint.Y, secondPoint.X, secondPoint.Y, gr);
+                            var firstK = (firstPoint.X - firstEdgeBegin.X) / (firstEdgeEnd.X - firstPoint.X);
+                            var firstPointZ = (firstEdgeBegin.Z + firstEdgeEnd.Z * firstK) / (firstK + 1);
+
+                            var secondK = (secondPoint.X - secondEdgeBegin.X) / (secondEdgeEnd.X - secondPoint.X);
+                            var secondPointZ = (secondEdgeBegin.Z + secondEdgeEnd.Z * secondK) / (secondK + 1);
+
+                            DrawLine(firstPoint.X, firstPoint.Y, firstPointZ, secondPoint.X, secondPoint.Y, secondPointZ, gr);
                         }
 
                         skylineBegin.Y--;
                         skylineEnd.Y--;
                     }
+
                 };
             }
 
@@ -290,6 +310,41 @@ namespace WinForms3DModelViewer
             for (int i = 0; i < vertices.Count; i++)
             {
                 vertices[i] = Vector4.Transform(vertices[i], transformMatrix);
+            }
+        }
+
+        private void InitializeZBuffer()
+        {
+            var width = pictureBoxPaintArea.Width;
+            var height = pictureBoxPaintArea.Height;
+
+            var maxZ = float.MaxValue;
+
+            if (zBuffer == null)
+            {
+                zBuffer = new float[height][];
+
+                for (int i = 0; i < height; i++)
+                {
+                    var arr = new float[width];
+
+                    for (int j = 0; j < width; j++)
+                    {
+                        arr[j] = maxZ;
+                    }
+
+                    zBuffer[i] = arr;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < height; i++)
+                {
+                    for (int j = 0; j < width; j++)
+                    {
+                        zBuffer[i][j] = maxZ;
+                    }
+                }
             }
         }
 
