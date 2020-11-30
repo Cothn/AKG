@@ -26,8 +26,10 @@ namespace WinForms3DModelViewer
 
         Point lastPoint = Point.Empty;
         bool isMouseDown = false;
+        bool neadDrow = true;
 
         Vector3 viewPoint = new Vector3(0, 0, 4);
+        //Vector3 viewPoint = new Vector3(0, 5, 15);
         float delta = 0.1f;
         float aDelta = 1f;
 
@@ -47,6 +49,7 @@ namespace WinForms3DModelViewer
             ObjParser parser = new ObjParser();
             (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
                 = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+                //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
             Transform();
         }
 
@@ -327,6 +330,7 @@ namespace WinForms3DModelViewer
 
             viewPoint.Z += (e.Delta / 700.0f);
             Transform();
+            neadDrow = true;
         }
 
         private void MainForm_ResizeEnd(object sender, EventArgs e)
@@ -365,31 +369,38 @@ namespace WinForms3DModelViewer
                     yRotation += v.X;
                     lastPoint = e.Location;//keep assigning the lastPoint to the current mouse position
                     Transform();
+                    neadDrow = true;
                 }
             }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            
             if (Keyboard.IsKeyDown(Keys.W))
             {
                 xRotation -= aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.S))
             {
                 xRotation += aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.D))
             {
                 yRotation -= aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.A))
             {
                 yRotation += aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.Z))
             {
                 viewPoint.Z += delta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.X))
             {
@@ -397,10 +408,15 @@ namespace WinForms3DModelViewer
                     return;
 
                 viewPoint.Z -= delta;
+                neadDrow = true;
             };
 
-            Transform();
-            Draw();
+            if (neadDrow)
+            {
+                Transform();
+                Draw();
+                neadDrow = false;
+            }
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)

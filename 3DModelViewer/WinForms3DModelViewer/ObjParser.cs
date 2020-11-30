@@ -44,7 +44,39 @@ namespace WinForms3DModelViewer
                         .Select(c => c.Select(a => Int32.TryParse(a,out int res) ? res : 0).ToArray())
                         .ToArray();
 
-                    poligons.Add(coords);
+                    if (coords.Length > 3)
+                    {
+                        int[][] tmpCoords = new int[3][];
+
+                        tmpCoords[0] = coords[0];
+                        tmpCoords[1] = coords[1];
+                        tmpCoords[2] = coords[2];
+                        poligons.Add(tmpCoords);
+                        
+                        tmpCoords = new int[3][];
+                        tmpCoords[0] = coords[1];
+                        tmpCoords[1] = coords[2];
+                        tmpCoords[2] = coords[3];
+                        poligons.Add(tmpCoords);
+                        
+                        tmpCoords = new int[3][];
+                        tmpCoords[0] = coords[2];
+                        tmpCoords[1] = coords[3];
+                        tmpCoords[2] = coords[0];
+                        poligons.Add(tmpCoords);
+                        
+                        tmpCoords = new int[3][];
+                        tmpCoords[0] = coords[3];
+                        tmpCoords[1] = coords[0];
+                        tmpCoords[2] = coords[1];
+                        poligons.Add(tmpCoords);
+                    }
+                    else
+                    {
+                        poligons.Add(coords);
+                    }
+
+                    
                 }
                 else if (line.StartsWith("vn"))
                 {
@@ -62,7 +94,14 @@ namespace WinForms3DModelViewer
                         .Select(c => float.Parse(c,NumberStyles.Any, ci))
                         .ToArray();
 
-                    textureVectors.Add(new Vector3(coords[0], coords[1], coords[2]));
+                    if (coords.Length < 3)
+                    {
+                        textureVectors.Add(new Vector3(coords[0], coords[1], 0));
+                    }
+                    else
+                    {
+                        textureVectors.Add(new Vector3(coords[0], coords[1], coords[2]));
+                    }
                 }
             }
 
