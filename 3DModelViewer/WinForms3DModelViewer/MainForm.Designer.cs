@@ -31,22 +31,27 @@
             this.components = new System.ComponentModel.Container();
             this.pictureBoxPaintArea = new System.Windows.Forms.PictureBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPaintArea)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize) (this.pictureBoxPaintArea)).BeginInit();
             this.SuspendLayout();
             // 
             // pictureBoxPaintArea
             // 
-            this.pictureBoxPaintArea.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.pictureBoxPaintArea.Location = new System.Drawing.Point(12, 12);
+            this.pictureBoxPaintArea.Anchor =
+                ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top |
+                                                         System.Windows.Forms.AnchorStyles.Bottom) |
+                                                        System.Windows.Forms.AnchorStyles.Left) |
+                                                       System.Windows.Forms.AnchorStyles.Right)));
+            this.pictureBoxPaintArea.Location = new System.Drawing.Point(14, 14);
             this.pictureBoxPaintArea.Name = "pictureBoxPaintArea";
-            this.pictureBoxPaintArea.Size = new System.Drawing.Size(798, 585);
+            this.pictureBoxPaintArea.Size = new System.Drawing.Size(289, 155);
             this.pictureBoxPaintArea.TabIndex = 0;
             this.pictureBoxPaintArea.TabStop = false;
-            this.pictureBoxPaintArea.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseDown);
-            this.pictureBoxPaintArea.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseMove);
-            this.pictureBoxPaintArea.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseUp);
+            this.pictureBoxPaintArea.MouseDown +=
+                new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseDown);
+            this.pictureBoxPaintArea.MouseMove +=
+                new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseMove);
+            this.pictureBoxPaintArea.MouseUp +=
+                new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseUp);
             // 
             // timer1
             // 
@@ -56,9 +61,9 @@
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(822, 609);
+            this.ClientSize = new System.Drawing.Size(317, 183);
             this.Controls.Add(this.pictureBoxPaintArea);
             this.Name = "MainForm";
             this.Text = "MainForm";
@@ -66,9 +71,8 @@
             this.ResizeEnd += new System.EventHandler(this.MainForm_ResizeEnd);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
             this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.MainForm_KeyPress);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPaintArea)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.pictureBoxPaintArea)).EndInit();
             this.ResumeLayout(false);
-
         }
 
         #endregion

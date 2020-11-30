@@ -83,22 +83,21 @@ namespace WinForms3DModelViewer
                 vertices[i] /= vertices[i].W;
             }
 
-            removePoligons(poligons, eye, target);
 
-
+            removePoligons(poligons, this.viewPoint);
+            
             TransformVectors(viewPortMatrix);
 
 
         }
 
-        public void removePoligons(List<int[][]> poligons, Vector3 eye, Vector3 target)
+        public void removePoligons(List<int[][]> poligons, Vector3 eye)
         {
             for (int j = 0; j < poligons.Count; j++)
             {
                 var poligon = poligons[j];
 
                 // Remove polygon cut with proj matrix
-
                 if (poligon.Any(i => vertices[i[0] - 1].Z < 0 || vertices[i[0] - 1].Z > 1))
                 {
                     //Console.WriteLine("1");
@@ -109,17 +108,17 @@ namespace WinForms3DModelViewer
                 {
                     var vector1 = vertices[poligon[1][0] - 1] - vertices[poligon[0][0] - 1];
                     var vector2 = vertices[poligon[2][0] - 1] - vertices[poligon[0][0] - 1];
-                    var surfaceNormal = new Vector3(( vector1.Y *  vector2.Z -  vector1.Z * vector2.Y),  
-                        ( vector1.Z * vector2.X - vector1.X *  vector2.Z),  
-                        ( vector1.X * vector2.Y -  vector1.Y * vector2.X));
-                    var tmp = new Vector3(eye.X - vector1.X, eye.Y - vector1.Y, eye.Z - vector1.Z);
-                        tmp.Z = tmp.Z < 0 ? -tmp.Z : tmp.Z;
-                    if (surfaceNormal.X * tmp.X + surfaceNormal.Y * tmp.Y + surfaceNormal.Z * tmp.Z  < -0.00073 )
+                    var surfaceNormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                        (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                        (vector1.X * vector2.Y - vector1.Y * vector2.X));
+
+
+                    if (surfaceNormal.X * eye.X + surfaceNormal.Y * eye.Y + surfaceNormal.Z * eye.Z < 0.0)
                     {
                         poligons.RemoveAt(j);
                         j--;
                     }
-                        
+
                 }
             }
         }
@@ -259,7 +258,7 @@ namespace WinForms3DModelViewer
 
                     //var skylineBegin = new Vector2((float)-width/2, yMax );
                     //var skylineEnd = new Vector2((float)width/2, yMax);
-
+/*
                     var skylineBegin = new Vector2(minX - 1, yMax);
                     var skylineEnd = new Vector2(maxX + 1, yMax);
                      
@@ -299,7 +298,9 @@ namespace WinForms3DModelViewer
                         skylineBegin.Y--;
                         skylineEnd.Y--;
                     }
+                   */ 
                 };
+                
             }
 
             pictureBoxPaintArea.Image = bm;
