@@ -45,9 +45,12 @@
             this.pictureBoxPaintArea.Size = new System.Drawing.Size(798, 581);
             this.pictureBoxPaintArea.TabIndex = 0;
             this.pictureBoxPaintArea.TabStop = false;
-            this.pictureBoxPaintArea.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseDown);
-            this.pictureBoxPaintArea.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseMove);
-            this.pictureBoxPaintArea.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseUp);
+            this.pictureBoxPaintArea.MouseDown +=
+                new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseDown);
+            this.pictureBoxPaintArea.MouseMove +=
+                new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseMove);
+            this.pictureBoxPaintArea.MouseUp +=
+                new System.Windows.Forms.MouseEventHandler(this.pictureBoxPaintArea_MouseUp);
             // 
             // timer1
             // 
@@ -66,7 +69,7 @@
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(822, 609);
             this.Controls.Add(this.LskippedPixelsDraw);
@@ -77,7 +80,7 @@
             this.ResizeEnd += new System.EventHandler(this.MainForm_ResizeEnd);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
             this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.MainForm_KeyPress);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPaintArea)).EndInit();
+            ((System.ComponentModel.ISupportInitialize) (this.pictureBoxPaintArea)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -28,8 +28,10 @@ namespace WinForms3DModelViewer
 
         Point lastPoint = Point.Empty;
         bool isMouseDown = false;
+        bool neadDrow = true;
 
         Vector3 viewPoint = new Vector3(0, 0, 4);
+        //Vector3 viewPoint = new Vector3(0, 5, 15);
         float delta = 0.1f;
         float aDelta = 1f;
 
@@ -55,6 +57,7 @@ namespace WinForms3DModelViewer
             ObjParser parser = new ObjParser();
             (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
                 = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+                //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
             Transform();
         }
 
@@ -76,6 +79,7 @@ namespace WinForms3DModelViewer
 
             //Place and transform model from local to Viewer coordinates
             var viewerMatrix = ToViewerCoordinates(eye, target, up);
+            
 
             var projectionMatrix = ToProjectionCoordinates();
 
@@ -100,21 +104,43 @@ namespace WinForms3DModelViewer
 
             projectionVertices = new List<Vector4>(vertices);
 
+            removePoligons(poligons, this.viewPoint);
+            
+            TransformVectors(viewPortMatrix);
+
+
+        }
+
+        public void removePoligons(List<int[][]> poligons, Vector3 eye)
+        {
             for (int j = 0; j < poligons.Count; j++)
             {
                 var poligon = poligons[j];
 
                 // Remove polygon cut with proj matrix
-
                 if (poligon.Any(i => vertices[i[0] - 1].Z < 0 || vertices[i[0] - 1].Z > 1))
                 {
                     //Console.WriteLine("1");
                     poligons.RemoveAt(j);
                     j--;
                 }
-            }
-            TransformVectors(viewPortMatrix);
+                else
+                {
+                    var vector1 = vertices[poligon[1][0] - 1] - vertices[poligon[0][0] - 1];
+                    var vector2 = vertices[poligon[2][0] - 1] - vertices[poligon[0][0] - 1];
+                    var surfaceNormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                        (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                        (vector1.X * vector2.Y - vector1.Y * vector2.X));
 
+
+                    if (surfaceNormal.X * eye.X + surfaceNormal.Y * eye.Y + surfaceNormal.Z * eye.Z < 0.0)
+                    {
+                        poligons.RemoveAt(j);
+                        j--;
+                    }
+
+                }
+            }
         }
         
 
@@ -292,7 +318,6 @@ namespace WinForms3DModelViewer
                         }
                     };
 
-
                     var skylineBegin = new Vector2(minX - 1, yMax);
                     var skylineEnd = new Vector2(maxX + 1, yMax);
 
@@ -338,8 +363,8 @@ namespace WinForms3DModelViewer
                         skylineBegin.Y--;
                         skylineEnd.Y--;
                     }
-
                 };
+                
             }
 
             LskippedPixelsDraw.Text = skippedPixelsDraw.ToString();
@@ -458,6 +483,7 @@ namespace WinForms3DModelViewer
 
             viewPoint.Z += (e.Delta / 700.0f);
             Transform();
+            neadDrow = true;
         }
 
         private void MainForm_ResizeEnd(object sender, EventArgs e)
@@ -496,31 +522,38 @@ namespace WinForms3DModelViewer
                     yRotation += v.X;
                     lastPoint = e.Location;//keep assigning the lastPoint to the current mouse position
                     Transform();
+                    neadDrow = true;
                 }
             }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            
             if (Keyboard.IsKeyDown(Keys.W))
             {
                 xRotation -= aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.S))
             {
                 xRotation += aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.D))
             {
                 yRotation -= aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.A))
             {
                 yRotation += aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.Z))
             {
                 viewPoint.Z += delta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.X))
             {
@@ -528,10 +561,15 @@ namespace WinForms3DModelViewer
                     return;
 
                 viewPoint.Z -= delta;
+                neadDrow = true;
             };
 
-            Transform();
-            Draw();
+            if (neadDrow)
+            {
+                Transform();
+                Draw();
+                neadDrow = false;
+            }
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
@@ -604,5 +642,6 @@ namespace WinForms3DModelViewer
             TransformVectors(rotateMatrix);
         }
 */
+
     }
 }
