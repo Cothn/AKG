@@ -33,9 +33,16 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
+        Vector4 lightPoint = new Vector4(2, 1, 0.0001F, 0);
+        private List<Vector4> worldVertices;
+        private List<Vector4> viewerVertices;
+        private List<Vector4> projectionVertices;
+
         float xRotation = 0;
         float yRotation = 0;
         float zRotation = 0;
+
+        private int skippedPixelsDraw = 0;
 
         public MainForm()
         {
@@ -76,14 +83,22 @@ namespace WinForms3DModelViewer
 
             var mainMatrix = viewerMatrix * projectionMatrix;
 
-            TransformVectors(mainMatrix);
+            //TransformVectors(mainMatrix);
+
+            TransformVectors(viewerMatrix);
+
+            viewerVertices = new List<Vector4>(vertices);
+
+            TransformVectors(projectionMatrix);
+
+
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
             {
                 vertices[i] /= vertices[i].W;
             }
 
-
+            projectionVertices = new List<Vector4>(vertices);
 
             for (int j = 0; j < poligons.Count; j++)
             {
@@ -168,7 +183,7 @@ namespace WinForms3DModelViewer
             return viewerMatrix;
         }
 
-        public void DrawLine(float x1, float y1, float z1, float x2, float y2, float z2, Graphics bm, int pointWidth = 2, int pointHeight = 2)
+        public void DrawLine(float x1, float y1, float z1, float x2, float y2, float z2, Graphics bm, float colorScale = -1, int pointWidth = 2, int pointHeight = 2)
         {
             float x = x1;
             float y = y1;
@@ -180,21 +195,33 @@ namespace WinForms3DModelViewer
             var stepy = (y2 - y1) / length;
             var stepz = (z2 - z1) / length;
 
-            Brush aBrush = (Brush)Brushes.White;
-            Brush brush = Brushes.Black;
+            Brush brush;
+
+            if (colorScale < 0)
+            {
+                brush = Brushes.White;
+            }
+            else
+            {
+                brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
+            }
+
+            //Brush bBrush = Brushes.Black;
 
             for (int i = 1; i <= (int)length; i++)
             {
-                if (zBuffer[(int) y][(int) x] > z)
+                if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int) y][(int) x] > z)
+                //if (zBuffer[(int) y][(int) x] > z)
                 {
                     zBuffer[(int) y][(int) x] = z;
 
-                    bm.FillRectangle(aBrush, x, y, pointWidth, pointHeight);
+                    bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
                 }
-                //else
-                //{
-                //    bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
-                //}
+                else
+                {
+                    skippedPixelsDraw++;
+                    //bm.FillRectangle(bBrush, x, y, pointWidth, pointHeight);
+                }
 
                 x += stepx;
                 y += stepy;
@@ -207,7 +234,9 @@ namespace WinForms3DModelViewer
         {
             InitializeZBuffer();
 
-            //SortPoligonsByMinZ();
+            SortPoligonsByMinZ();
+
+            skippedPixelsDraw = 0;
 
             var minX = vertices.Min(x => x.X);
             var maxX = vertices.Max(x => x.X);
@@ -228,6 +257,14 @@ namespace WinForms3DModelViewer
                     float yMax = float.MinValue;
                     int indexMax = -1;
                     float yMin = float.MaxValue;
+                    float poligonColorScale;
+
+                    poligonColorScale = FindPoligonLambertComponent(poligon);
+
+                    //if (poligonColorScale > 0 && poligonColorScale < 0.80)
+                    //{
+                    //    poligonColorScale++;
+                    //}
 
                     for (int i = 0; i < poligon.Length; i++)
                     {
@@ -241,7 +278,7 @@ namespace WinForms3DModelViewer
                         var Z1 = (vertices[k].Z);
                         var Z2 = (vertices[j].Z);
 
-                        DrawLine(X1, Y1, Z1, X2, Y2, Z2, gr);
+                        DrawLine(X1, Y1, Z1, X2, Y2, Z2, gr, poligonColorScale);
 
                         if (vertices[k].Y > yMax)
                         {
@@ -295,7 +332,7 @@ namespace WinForms3DModelViewer
                             var secondK = (secondPoint.X - secondEdgeBegin.X) / (secondEdgeEnd.X - secondPoint.X);
                             var secondPointZ = (secondEdgeBegin.Z + secondEdgeEnd.Z * secondK) / (secondK + 1);
 
-                            DrawLine(firstPoint.X, firstPoint.Y, firstPointZ, secondPoint.X, secondPoint.Y, secondPointZ, gr);
+                            DrawLine(firstPoint.X, firstPoint.Y, firstPointZ, secondPoint.X, secondPoint.Y, secondPointZ, gr, poligonColorScale);
                         }
 
                         skylineBegin.Y--;
@@ -304,6 +341,8 @@ namespace WinForms3DModelViewer
 
                 };
             }
+
+            LskippedPixelsDraw.Text = skippedPixelsDraw.ToString();
 
             pictureBoxPaintArea.Image = bm;
         }
@@ -380,6 +419,33 @@ namespace WinForms3DModelViewer
             }
 
             poligons = newPoligonsList;
+        }
+
+        private float FindPoligonLambertComponent(int[][] poligon)
+        {
+            float averageLambertComponent = 0;
+
+            for (int i = 0; i < poligon.Length; i++)
+            {
+                averageLambertComponent +=
+                    VertexColorByLambert(projectionVertices[poligon[i][0] - 1], projectionVertices[poligon[i][2] - 1]);
+            }
+
+            averageLambertComponent /= poligon.Length;
+
+            return averageLambertComponent;
+        }
+
+        private float VertexColorByLambert(Vector4 vertexPosition, Vector4 vertexNormal)
+        {
+            Vector4 lightDirection = lightPoint - vertexPosition;
+            Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
+
+            Vector3 N = Vector3.Normalize(new Vector3(vertexNormal.X, vertexNormal.Y, vertexNormal.Z));
+
+            float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
+
+            return lambertComponent;
         }
 
         private void _MouseWheel(object sender, MouseEventArgs e)
