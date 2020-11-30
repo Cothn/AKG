@@ -35,7 +35,7 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
-        Vector4 lightPoint = new Vector4(2, 1, 0.0001F, 0);
+        Vector4 lightPoint = new Vector4(0, 0, 2F, 0);
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
@@ -64,6 +64,7 @@ namespace WinForms3DModelViewer
         public void Transform()
         {
             vertices = new List<Vector4>(originalVertices);
+            normalVertices = new List<Vector3>(originalNormalVertices);
             poligons = new List<int[][]>(originalPoligons);
 
             var eye = this.viewPoint;
@@ -90,11 +91,12 @@ namespace WinForms3DModelViewer
             //TransformVectors(mainMatrix);
 
             TransformVectors(viewerMatrix);
+            TransformNormals(viewerMatrix);
 
             viewerVertices = new List<Vector4>(vertices);
 
             TransformVectors(projectionMatrix);
-
+            TransformNormals(projectionMatrix);
 
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
@@ -107,8 +109,6 @@ namespace WinForms3DModelViewer
             removePoligons(poligons, this.viewPoint);
             
             TransformVectors(viewPortMatrix);
-
-
         }
 
         public void removePoligons(List<int[][]> poligons, Vector3 eye)
@@ -383,6 +383,14 @@ namespace WinForms3DModelViewer
             }
         }
 
+        public void TransformNormals(Matrix4x4 transformMatrix)
+        {
+            for (int i = 0; i < normalVertices.Count; i++)
+            {
+                normalVertices[i] = Vector3.Transform(normalVertices[i], transformMatrix);
+            }
+        }
+
         private void InitializeZBuffer()
         {
             var width = pictureBoxPaintArea.Width;
@@ -390,31 +398,18 @@ namespace WinForms3DModelViewer
 
             var maxZ = float.MaxValue;
 
-            if (zBuffer == null)
+            zBuffer = new float[height][];
+
+            for (int i = 0; i < height; i++)
             {
-                zBuffer = new float[height][];
+                var arr = new float[width];
 
-                for (int i = 0; i < height; i++)
+                for (int j = 0; j < width; j++)
                 {
-                    var arr = new float[width];
-
-                    for (int j = 0; j < width; j++)
-                    {
-                        arr[j] = maxZ;
-                    }
-
-                    zBuffer[i] = arr;
+                    arr[j] = maxZ;
                 }
-            }
-            else
-            {
-                for (int i = 0; i < height; i++)
-                {
-                    for (int j = 0; j < width; j++)
-                    {
-                        zBuffer[i][j] = maxZ;
-                    }
-                }
+
+                zBuffer[i] = arr;
             }
         }
 
@@ -453,7 +448,7 @@ namespace WinForms3DModelViewer
             for (int i = 0; i < poligon.Length; i++)
             {
                 averageLambertComponent +=
-                    VertexColorByLambert(projectionVertices[poligon[i][0] - 1], projectionVertices[poligon[i][2] - 1]);
+                    VertexColorByLambert(projectionVertices[poligon[i][0] - 1], normalVertices[poligon[i][2] - 1]);
             }
 
             averageLambertComponent /= poligon.Length;
@@ -461,14 +456,15 @@ namespace WinForms3DModelViewer
             return averageLambertComponent;
         }
 
-        private float VertexColorByLambert(Vector4 vertexPosition, Vector4 vertexNormal)
+        private float VertexColorByLambert(Vector4 vertexPosition, Vector3 vertexNormal)
         {
             Vector4 lightDirection = lightPoint - vertexPosition;
+            //Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) - new Vector3(vertexPosition.X, vertexPosition.Y, vertexPosition.Z);
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
 
-            Vector3 N = Vector3.Normalize(new Vector3(vertexNormal.X, vertexNormal.Y, vertexNormal.Z));
+            Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
+            float lambertComponent = Math.Max(Vector3.Dot(N, L), 0);
 
             return lambertComponent;
         }
