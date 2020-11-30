@@ -36,7 +36,6 @@ namespace WinForms3DModelViewer
         float xRotation = 0;
         float yRotation = 0;
         float zRotation = 0;
-        
 
         public MainForm()
         {
@@ -182,6 +181,7 @@ namespace WinForms3DModelViewer
             var stepz = (z2 - z1) / length;
 
             Brush aBrush = (Brush)Brushes.White;
+            Brush brush = Brushes.Black;
 
             for (int i = 1; i <= (int)length; i++)
             {
@@ -191,6 +191,10 @@ namespace WinForms3DModelViewer
 
                     bm.FillRectangle(aBrush, x, y, pointWidth, pointHeight);
                 }
+                //else
+                //{
+                //    bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
+                //}
 
                 x += stepx;
                 y += stepy;
@@ -202,6 +206,8 @@ namespace WinForms3DModelViewer
         public void Draw()
         {
             InitializeZBuffer();
+
+            //SortPoligonsByMinZ();
 
             var minX = vertices.Min(x => x.X);
             var maxX = vertices.Max(x => x.X);
@@ -346,6 +352,34 @@ namespace WinForms3DModelViewer
                     }
                 }
             }
+        }
+
+        private void SortPoligonsByMinZ()
+        {
+            var poligonsZ = new List<(int num, float[] val)>(poligons.Count);
+
+            for (int i = 0; i < poligons.Count; i++)
+            {
+                var arr = new float[3];
+
+                for (var j = 0; j < poligons[i].Length; j++)
+                {
+                    arr[j] = vertices[poligons[i][j][0] - 1].Z;
+                }
+
+                poligonsZ.Add((i, arr));
+            }
+
+            poligonsZ = (List<(int num, float[] val)>)poligonsZ.OrderBy(x => x.val.Min()).ToList();
+
+            var newPoligonsList = new List<int[][]>();
+
+            for (int i = 0; i < poligons.Count; i++)
+            {
+                newPoligonsList.Add(poligons[poligonsZ[i].num]);
+            }
+
+            poligons = newPoligonsList;
         }
 
         private void _MouseWheel(object sender, MouseEventArgs e)
