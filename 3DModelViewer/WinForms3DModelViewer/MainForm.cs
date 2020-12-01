@@ -35,7 +35,7 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
-        Vector4 lightPoint = new Vector4(1, 1, 2F, 0);
+        Vector4 lightPoint = new Vector4(100, 110, 2F, 0);
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
@@ -96,7 +96,7 @@ namespace WinForms3DModelViewer
             viewerVertices = new List<Vector4>(vertices);
 
             TransformVectors(projectionMatrix);
-            TransformNormals(projectionMatrix);
+            //TransformNormals(projectionMatrix);
 
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
@@ -341,7 +341,7 @@ namespace WinForms3DModelViewer
         {
             InitializeZBuffer();
 
-            //SortPoligonsByMinZ();
+            SortPoligonsByMinZ();
 
             skippedPixelsDraw = 0;
 
@@ -494,7 +494,7 @@ namespace WinForms3DModelViewer
             for (int i = 0; i < poligon.Length; i++)
             {
                 averageLambertComponent +=
-                    VertexColorByLambert(projectionVertices[poligon[i][0] - 1], normalVertices[poligon[i][2] - 1]);
+                    VertexColorByLambert(viewerVertices[poligon[i][0] - 1], normalVertices[poligon[i][2] - 1]);
             }
 
             averageLambertComponent /= poligon.Length;
@@ -510,7 +510,7 @@ namespace WinForms3DModelViewer
 
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = Math.Max(Vector3.Dot(N, L), 0);
+            float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
 
             return lambertComponent;
         }
