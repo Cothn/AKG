@@ -35,7 +35,7 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
-        Vector4 lightPoint = new Vector4(100, 110, 2F, 0);
+        Vector4 lightPoint = new Vector4(10, 11, 2F, 0);
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
@@ -120,7 +120,6 @@ namespace WinForms3DModelViewer
                 // Remove polygon cut with proj matrix
                 if (poligon.Any(i => vertices[i[0] - 1].Z < 0 || vertices[i[0] - 1].Z > 1))
                 {
-                    //Console.WriteLine("1");
                     poligons.RemoveAt(j);
                     j--;
                 }
@@ -208,7 +207,8 @@ namespace WinForms3DModelViewer
             
             return viewerMatrix;
         }
-
+        
+/*
         public void DrawLine(float x1, float y1, float z1, float x2, float y2, float z2, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
         {
             float x = x1;
@@ -237,9 +237,6 @@ namespace WinForms3DModelViewer
             for (int i = 1; i <= (int)length; i++)
             {
                 if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int)y][(int)x] > z)
-                //if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && 
-                //    zBuffer[(int)y][(int)x] > z && zBuffer[(int)y + 1][(int)x] > z && zBuffer[(int)y][(int)x + 1] > z && zBuffer[(int)y + 1][(int)x + 1] > z)
-                //if (zBuffer[(int) y][(int) x] > z)
                 {
                     zBuffer[(int)y][(int)x] = z;
 
@@ -256,18 +253,11 @@ namespace WinForms3DModelViewer
                 z += stepz;
             }
         }
-
+*/
         public void DrawTriangle(Vector4 A, Vector4 B, Vector4 C, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
         {
             Brush brush;
-            //float x = A.X;
-           // float y = A.Y;
-            //float z = A.Z;
-            //float dx = Math.Abs( - x1);
-            var height = Math.Abs(A.Y - C.Y);
-
             var startVector = A;
-            var endVector = B;
 
             if (colorScale < 0)
             {
@@ -319,7 +309,6 @@ namespace WinForms3DModelViewer
                             var z = (startZ + endZ *K) / (K + 1);
                             if (zBuffer[(int) y][(int) x] > z)
                             {
-                                //&& x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int)y][(int)x] > z
                                 zBuffer[(int) y][(int) x] = z;
 
                                 bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
@@ -327,7 +316,6 @@ namespace WinForms3DModelViewer
                             else
                             {
                                 skippedPixelsDraw++;
-                                //bm.FillRectangle(bBrush, x, y, pointWidth, pointHeight);
                             }
                         }
                     }
