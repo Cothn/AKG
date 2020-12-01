@@ -257,10 +257,17 @@ namespace WinForms3DModelViewer
             }
         }
 
-        public void DrawLine(Vector4 A, Vector4 B, int y, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
+        public void DrawTriangle(Vector4 A, Vector4 B, Vector4 C, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
         {
             Brush brush;
+            //float x = A.X;
+           // float y = A.Y;
+            //float z = A.Z;
+            //float dx = Math.Abs( - x1);
+            var height = Math.Abs(A.Y - C.Y);
 
+            var startVector = A;
+            var endVector = B;
 
             if (colorScale < 0)
             {
@@ -271,23 +278,61 @@ namespace WinForms3DModelViewer
                 brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
             }
 
-            int startX = (int) Math.Ceiling(A.X);
-            int endX = (int) Math.Ceiling(B.X);
-            var z = A.Z;
-            var stepz = (A.Z - B.Z) / (A.X-B.X);
 
-            for (int x = startX; x <= endX; x++)
+            for (int y = (int) Math.Floor(startVector.Y); y >= (int) Math.Ceiling(C.Y); y--)
             {
-                
+                if (y > 0 && y < pictureBoxPaintArea.Height)
 
-                if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int)y][(int)x] > z)
                 {
-                    zBuffer[y][x] = z;
+                    float startX;
+                    float startZ;
+                    if (y >= B.Y)
+                    {
+                        var BAK = (y - B.Y) / (startVector.Y - y);
+                        startX = (B.X + startVector.X * BAK) / (BAK + 1);
+                        startZ = (B.Z + startVector.Z * BAK) / (BAK + 1);
+                    }
+                    else
+                    {
+                        var CBK = (y - C.Y) / (B.Y - y);
+                        startX = (C.X + B.X * CBK) / (CBK + 1);
+                        startZ = (C.Z + B.Z * CBK) / (CBK + 1);
+                    }
 
-                    bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
+                    
+                    var CAK = (y - C.Y) / (startVector.Y - y);
+    
+                    var endX = (C.X + startVector.X * CAK) / (CAK + 1);
+                    var endZ = (C.Z + startVector.Z * CAK) / (CAK + 1);
+                    if (startX > endX)
+                    {
+                        Swap(ref startX, ref endX);
+                        Swap(ref startZ, ref endZ);
+                    }
+
+                    for (int x = (int) Math.Ceiling(startX); x <= (int) Math.Floor(endX); x++)
+                    {
+                        if (x > 0 && x < pictureBoxPaintArea.Width)
+                        {
+                            
+                            var K = (x - startX) / (endX - x);
+                            var z = (startZ + endZ *K) / (K + 1);
+                            if (zBuffer[(int) y][(int) x] > z)
+                            {
+                                //&& x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int)y][(int)x] > z
+                                zBuffer[(int) y][(int) x] = z;
+
+                                bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
+                            }
+                            else
+                            {
+                                skippedPixelsDraw++;
+                                //bm.FillRectangle(bBrush, x, y, pointWidth, pointHeight);
+                            }
+                        }
+                    }
+
                 }
-
-                z += stepz;
             }
         }
 
@@ -324,10 +369,6 @@ namespace WinForms3DModelViewer
 
                     poligonColorScale = FindPoligonLambertComponent(poligon);
 
-                    //if (poligonColorScale > 0 && poligonColorScale < 0.80)
-                    //{
-                    //    poligonColorScale++;
-                    //}
 
                     for (int i = 0; i < poligon.Length; i++)
                     {
@@ -340,29 +381,7 @@ namespace WinForms3DModelViewer
                         var Y2 = (vertices[j].Y);
                         var Z1 = (vertices[k].Z);
                         var Z2 = (vertices[j].Z);
-
-                        //DrawLine(vertices[k], vertices[j], gr, poligonColorScale);
-
-                        //DrawLine(X1, Y1, Z1, X2, Y2, Z2, gr, poligonColorScale);
-
-                        //if (vertices[k].Y > yMax)
-                        //{
-                            //indexMax = i;
-                            //yMax = vertices[k].Y;
-                        //}
-
-                        //if (vertices[k].Y < yMin)
-                        //{
-                            //indexMin = i;
-                            //yMin = vertices[k].Y;
-                        //}
-                    };
-
-                    //////
-
-                    if ((int)Math.Ceiling(vertices[poligon[0][0] - 1].Y) == (int)Math.Ceiling(vertices[poligon[1][0] - 1].Y) &&
-                        (int)Math.Ceiling(vertices[poligon[0][0] - 1].Y) == (int)Math.Ceiling(vertices[poligon[2][0] - 1].Y))
-                        continue;
+                    }
 
                     int[][] sortedPoligonVertices = new int[poligon.Length][];
 
@@ -388,187 +407,8 @@ namespace WinForms3DModelViewer
                     var t1 = vertices[sortedPoligonVertices[1][0] - 1];
                     var t2 = vertices[sortedPoligonVertices[2][0] - 1];
                     
-                    //var poligonHeight = vertices[sortedPoligonVertices[2][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y;
-                    int total_height = (int)(t2.Y-t0.Y);
-                    if (total_height == 0) total_height = (int)(t2.Y - t1.Y);
-                    if (total_height == 0) continue;
-                    if ((int)t0.Y==(int)t1.Y && (int)t0.Y==(int)t2.Y) continue;
-                    for (int y=(int)t0.Y; y<=t1.Y; y++) {
-                        float segment_height = t1.Y-t0.Y+1;
-                        float alpha = (float)(y-t0.Y)/total_height;
-                        float beta  = (float)(y-t0.Y)/segment_height; // be careful with divisions by zero
-                        Vector4 A = t0 + (t2-t0)*alpha;
-                        Vector4 B = t0 + (t1-t0)*beta;
-                        if (A.X>B.X) Swap(ref A, ref B);
-                        DrawLine(A, B, y,  gr, poligonColorScale);
-                    }
-                    for (int y=(int)t1.Y; y<=t2.Y; y++) {
-                        float segment_height =  t2.Y-t1.Y+1;
-                        float alpha = (float)(y-t0.Y)/total_height;
-                        float beta  = (float)(y-t1.Y)/segment_height; // be careful with divisions by zero
-                        Vector4 A = t0 + (t2-t0)*alpha;
-                        Vector4 B = t1 + (t2-t1)*beta;
-                        if (A.X>B.X) Swap(ref A, ref B);
-                        DrawLine(A, B, y,  gr, poligonColorScale);
-                    }
-                    /*
-                    for (int i = 0; i < poligonHeight; i++)
-                    {
-                        bool secondHalf = i > vertices[sortedPoligonVertices[1][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y
-                                                || vertices[sortedPoligonVertices[1][0] - 1].Y == vertices[sortedPoligonVertices[0][0] - 1].Y;
-
-                        float segmentHeight = secondHalf
-                            ? vertices[sortedPoligonVertices[2][0] - 1].Y - vertices[sortedPoligonVertices[1][0] - 1].Y
-                            : vertices[sortedPoligonVertices[1][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y;
-
-                        float alpha = (float) i / poligonHeight;
-                        float beta = (float) ((i - (secondHalf ? (int) Math.Ceiling(
-                                                       vertices[sortedPoligonVertices[1][0] - 1].Y -
-                                                       vertices[sortedPoligonVertices[0][0] - 1].Y)
-                                                   : 0)) / segmentHeight);
-
-                        Vector4 A = vertices[sortedPoligonVertices[0][0] - 1] + (vertices[sortedPoligonVertices[2][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) * alpha;
-                        Vector4 B = secondHalf
-                            ? vertices[sortedPoligonVertices[1][0] - 1] +
-                              (vertices[sortedPoligonVertices[2][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) *
-                              beta
-                            : vertices[sortedPoligonVertices[0][0] - 1] +
-                              (vertices[sortedPoligonVertices[1][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) *
-                              beta;
-                        
-
-                        if (A.X > B.X)
-                        {
-                            Swap(ref A, ref B);
-                        }
-
-                        A = new Vector4((int)Math.Ceiling(A.X), (int)Math.Ceiling(A.Y), (int)Math.Ceiling(A.Z), (int)Math.Ceiling(A.W));
-                        B = new Vector4((int)Math.Ceiling(B.X), (int)Math.Ceiling(B.Y), (int)Math.Ceiling(B.Z), (int)Math.Ceiling(B.W));
-
-                        DrawLine(A, B, (int)vertices[sortedPoligonVertices[0][0] - 1].Y+i,  gr, poligonColorScale);
-                    }*/
-
-                    ////////////
-/*
-                    var scale = 1;
-
-                    var indexes = new List<int> { 0, 1, 2 };
-                    indexes.Remove(indexMax);
-
-                    var skylineBegin = new Vector2(minX - 1, yMax);
-                    var skylineEnd = new Vector2(maxX + 1, yMax);
-
-                    Vector3 firstEdgeBegin, firstEdgeEnd;
-                    Vector3 secondEdgeBegin, secondEdgeEnd;
-
-                    firstEdgeBegin = new Vector3(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y, vertices[poligon[indexes[0]][0] - 1].Z);
-                    firstEdgeEnd = new Vector3(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y, vertices[poligon[indexMax][0] - 1].Z);
-
-                    if (firstEdgeBegin.X < firstEdgeEnd.X)
-                    {
-                        firstEdgeEnd.X += scale;
-                    }
-                    else
-                    {
-                        firstEdgeEnd.X -= scale;
-                    }
-
-                    firstEdgeBegin.Y -= scale;
-                    firstEdgeEnd.Y += scale * 2;
-
-
-                    secondEdgeBegin = new Vector3(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y, vertices[poligon[indexes[1]][0] - 1].Z);
-                    secondEdgeEnd = new Vector3(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y, vertices[poligon[indexMax][0] - 1].Z);
-
-                    if (secondEdgeBegin.X < firstEdgeEnd.X)
-                    {
-                        firstEdgeEnd.X += scale;
-                    }
-                    else
-                    {
-                        firstEdgeEnd.X -= scale;
-                    }
-
-                    secondEdgeEnd.X = firstEdgeEnd.X;
-                    secondEdgeEnd.Y = firstEdgeEnd.Y;
-
-                    secondEdgeBegin.Y -= scale;
-
-                    if (firstEdgeBegin.X > secondEdgeBegin.X)
-                    {
-                        firstEdgeBegin.X += scale;
-                        secondEdgeBegin.X -= scale;
-                    }
-                    else
-                    {
-                        firstEdgeBegin.X -= scale;
-                        secondEdgeBegin.X += scale;
-                    }
-
-                    while (skylineBegin.Y > yMin)
-                    {
-                        if (skylineBegin.Y < firstEdgeBegin.Y)
-                        {
-                            firstEdgeEnd = new Vector3(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y, vertices[poligon[indexes[1]][0] - 1].Z);
-                        }
-
-                        if (skylineBegin.Y < secondEdgeBegin.Y)
-                        {
-                            secondEdgeEnd = new Vector3(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y, vertices[poligon[indexes[0]][0] - 1].Z);
-                        }
-
-                        if (PointsCrossing.ArePointsCrossing(firstEdgeBegin, firstEdgeEnd, skylineBegin, skylineEnd) &&
-                            PointsCrossing.ArePointsCrossing(secondEdgeBegin, secondEdgeEnd, skylineBegin, skylineEnd))
-                        {
-                            var firstPoint = PointsCrossing.CrossingPoint(firstEdgeBegin, firstEdgeEnd, skylineBegin, skylineEnd);
-                            var secondPoint = PointsCrossing.CrossingPoint(secondEdgeBegin, secondEdgeEnd, skylineBegin, skylineEnd);
-
-                            var firstK = (firstPoint.X - firstEdgeBegin.X) / (firstEdgeEnd.X - firstPoint.X);
-                            var firstPointZ = (firstEdgeBegin.Z + firstEdgeEnd.Z * firstK) / (firstK + 1);
-
-                            var secondK = (secondPoint.X - secondEdgeBegin.X) / (secondEdgeEnd.X - secondPoint.X);
-                            var secondPointZ = (secondEdgeBegin.Z + secondEdgeEnd.Z * secondK) / (secondK + 1);
-
-                            //if (firstPoint.X < secondPoint.X)
-                            //{
-                            //    firstPoint.X -= scale;
-                            //    secondPoint.X += scale;
-                            //}
-                            //else
-                            //{
-                            //    firstPoint.X += scale;
-                            //    secondPoint.X -= scale;
-                            //}
-
-                            //if (firstPoint.Y < secondPoint.Y)
-                            //{
-                            //    firstPoint.Y -= scale;
-                            //    secondPoint.Y += scale;
-                            //}
-                            //else
-                            //{
-                            //    firstPoint.Y += scale;
-                            //    secondPoint.Y -= scale;
-                            //}
-
-                            DrawLine(firstPoint.X, firstPoint.Y, firstPointZ, secondPoint.X, secondPoint.Y, secondPointZ, gr, poligonColorScale);
-
-                            //DrawLine(firstPoint.X, firstPoint.Y, firstPointZ, secondPoint.X, secondPoint.Y, secondPointZ, gr, poligonColorScale);
-
-                            //DrawLine(firstPoint.X >= 0 ? firstPoint.X - scale : firstPoint.X + scale,
-                            //         firstPoint.Y >= 0 ? firstPoint.Y - scale : firstPoint.Y + scale, 
-                            //         firstPointZ, 
-                            //         secondPoint.X >= 0 ? secondPoint.X + scale : secondPoint.X - scale,
-                            //         secondPoint.Y >= 0 ? secondPoint.Y + scale : secondPoint.Y - scale, 
-                            //         secondPointZ, 
-                            //         gr, 
-                            //         poligonColorScale);
-                        }
-
-                        skylineBegin.Y--;
-                        skylineEnd.Y--;
-                    }
-                    */
+                    DrawTriangle(t2, t1, t0,  gr, poligonColorScale);
+                    
                 };
                 
             }
@@ -676,6 +516,13 @@ namespace WinForms3DModelViewer
         }
 
         private void Swap(ref int[] first, ref int[] second)
+        {
+            var temp = first;
+            first = second;
+            second = temp;
+        }
+        
+        private void Swap(ref float first, ref float second)
         {
             var temp = first;
             first = second;
