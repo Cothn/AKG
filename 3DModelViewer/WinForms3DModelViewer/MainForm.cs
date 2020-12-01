@@ -35,7 +35,7 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
-        Vector4 lightPoint = new Vector4(0, 0, 2F, 0);
+        Vector4 lightPoint = new Vector4(1, 1, 2F, 0);
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
@@ -209,7 +209,7 @@ namespace WinForms3DModelViewer
             return viewerMatrix;
         }
 
-        public void DrawLine(float x1, float y1, float z1, float x2, float y2, float z2, Graphics bm, float colorScale = -1, int pointWidth = 2, int pointHeight = 2)
+        public void DrawLine(float x1, float y1, float z1, float x2, float y2, float z2, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
         {
             float x = x1;
             float y = y1;
@@ -236,10 +236,12 @@ namespace WinForms3DModelViewer
 
             for (int i = 1; i <= (int)length; i++)
             {
-                if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int) y][(int) x] > z)
+                if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int)y][(int)x] > z)
+                //if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && 
+                //    zBuffer[(int)y][(int)x] > z && zBuffer[(int)y + 1][(int)x] > z && zBuffer[(int)y][(int)x + 1] > z && zBuffer[(int)y + 1][(int)x + 1] > z)
                 //if (zBuffer[(int) y][(int) x] > z)
                 {
-                    zBuffer[(int) y][(int) x] = z;
+                    zBuffer[(int)y][(int)x] = z;
 
                     bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
                 }
@@ -254,13 +256,47 @@ namespace WinForms3DModelViewer
                 z += stepz;
             }
         }
-        
+
+        //public void DrawLine(Vector4 A, Vector4 B, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
+        //{
+        //    Brush brush;
+
+        //    if (colorScale < 0)
+        //    {
+        //        brush = Brushes.White;
+        //    }
+        //    else
+        //    {
+        //        brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
+        //    }
+
+        //    int startX = (int) Math.Ceiling(A.X);
+        //    int endX = (int) Math.Ceiling(B.X);
+
+        //    for (int i = startX; i <= endX; i++)
+        //    {
+        //        float phi = endX == startX ? 1 : (i - startX) /(endX - startX);
+        //        Vector4 P = A + (B - A) * phi;
+
+        //        int x = (int) Math.Ceiling(P.X);
+        //        int y = (int) Math.Ceiling(P.Y);
+        //        int z = (int) Math.Ceiling(P.Z);
+
+        //        if (zBuffer[y][x] < z)
+        //        {
+        //            zBuffer[y][x] = z;
+
+        //            bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
+        //        }
+        //    }
+        //}
+
         //отрисовка модели
         public void Draw()
         {
             InitializeZBuffer();
 
-            SortPoligonsByMinZ();
+            //SortPoligonsByMinZ();
 
             skippedPixelsDraw = 0;
 
@@ -276,13 +312,14 @@ namespace WinForms3DModelViewer
             var bm = new Bitmap(width, height);
             using (var gr = Graphics.FromImage(bm))
             {
-                gr.Clear(Color.Black);
+                gr.Clear(Color.Blue);
 
                 foreach (var poligon in poligons)
                 {
                     float yMax = float.MinValue;
                     int indexMax = -1;
                     float yMin = float.MaxValue;
+                    int indexMin = -1;
                     float poligonColorScale;
 
                     poligonColorScale = FindPoligonLambertComponent(poligon);
@@ -304,6 +341,8 @@ namespace WinForms3DModelViewer
                         var Z1 = (vertices[k].Z);
                         var Z2 = (vertices[j].Z);
 
+                        //DrawLine(vertices[k], vertices[j], gr, poligonColorScale);
+
                         DrawLine(X1, Y1, Z1, X2, Y2, Z2, gr, poligonColorScale);
 
                         if (vertices[k].Y > yMax)
@@ -314,9 +353,82 @@ namespace WinForms3DModelViewer
 
                         if (vertices[k].Y < yMin)
                         {
+                            indexMin = i;
                             yMin = vertices[k].Y;
                         }
                     };
+
+                    //////
+
+                    //if ((int)Math.Ceiling(vertices[poligon[0][0] - 1].Y) == (int)Math.Ceiling(vertices[poligon[1][0] - 1].Y) &&
+                    //    (int)Math.Ceiling(vertices[poligon[0][0] - 1].Y) == (int)Math.Ceiling(vertices[poligon[2][0] - 1].Y))
+                    //    continue;
+
+                    //int[][] sortedPoligonVertices = new int[poligon.Length][];
+
+
+                    //Array.Copy(poligon, sortedPoligonVertices, poligon.Length);
+
+                    //if (vertices[sortedPoligonVertices[0][0] - 1].Y > vertices[sortedPoligonVertices[1][0] - 1].Y)
+                    //{
+                    //    Swap(ref sortedPoligonVertices[0], ref sortedPoligonVertices[1]);
+                    //}
+
+                    //if (vertices[sortedPoligonVertices[0][0] - 1].Y > vertices[sortedPoligonVertices[2][0] - 1].Y)
+                    //{
+                    //    Swap(ref sortedPoligonVertices[0], ref sortedPoligonVertices[2]);
+                    //}
+
+                    //if (vertices[sortedPoligonVertices[1][0] - 1].Y > vertices[sortedPoligonVertices[2][0] - 1].Y)
+                    //{
+                    //    Swap(ref sortedPoligonVertices[1], ref sortedPoligonVertices[2]);
+                    //}
+
+                    //var poligonHeight = (int)Math.Ceiling(vertices[sortedPoligonVertices[2][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y);
+
+                    //for (int i = 0; i < poligonHeight; i++)
+                    //{
+                    //    bool secondHalf = i > vertices[sortedPoligonVertices[1][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y
+                    //                            || (int)Math.Ceiling(vertices[sortedPoligonVertices[1][0] - 1].Y) == (int)Math.Ceiling(vertices[sortedPoligonVertices[0][0] - 1].Y);
+
+                    //    int segmentHeight = secondHalf
+                    //        ? (int)Math.Ceiling(vertices[sortedPoligonVertices[2][0] - 1].Y - vertices[sortedPoligonVertices[1][0] - 1].Y)
+                    //        : (int)Math.Ceiling(vertices[sortedPoligonVertices[1][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y);
+
+                    //    float alpha = (float) i / poligonHeight;
+                    //    float beta =
+                    //        (float) ((i - (secondHalf
+                    //            ? (int) Math.Ceiling(
+                    //                vertices[sortedPoligonVertices[1][0] - 1].Y -
+                    //                vertices[sortedPoligonVertices[0][0] - 1].Y)
+                    //            : 0)) / segmentHeight);
+
+                    //    Vector4 A = vertices[sortedPoligonVertices[0][0] - 1] + (vertices[sortedPoligonVertices[2][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) * alpha;
+                    //    Vector4 B = secondHalf
+                    //        ? vertices[sortedPoligonVertices[1][0] - 1] +
+                    //          (vertices[sortedPoligonVertices[2][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) *
+                    //          beta
+                    //        : vertices[sortedPoligonVertices[0][0] - 1] +
+                    //          (vertices[sortedPoligonVertices[1][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) *
+                    //          beta;
+
+                    //    if (A.X > B.X)
+                    //    {
+                    //        Swap(ref A, ref B);
+                    //    }
+
+                    //    A = new Vector4((int)Math.Ceiling(A.X), (int)Math.Ceiling(A.Y), (int)Math.Ceiling(A.Z), (int)Math.Ceiling(A.W));
+                    //    B = new Vector4((int)Math.Ceiling(B.X), (int)Math.Ceiling(B.Y), (int)Math.Ceiling(B.Z), (int)Math.Ceiling(B.W));
+
+                    //    DrawLine(A, B, gr, poligonColorScale);
+                    //}
+
+                    ////////////
+
+                    var scale = 1;
+
+                    var indexes = new List<int> { 0, 1, 2 };
+                    indexes.Remove(indexMax);
 
                     var skylineBegin = new Vector2(minX - 1, yMax);
                     var skylineEnd = new Vector2(maxX + 1, yMax);
@@ -324,14 +436,49 @@ namespace WinForms3DModelViewer
                     Vector3 firstEdgeBegin, firstEdgeEnd;
                     Vector3 secondEdgeBegin, secondEdgeEnd;
 
-                    var indexes = new List<int> { 0, 1, 2 };
-                    indexes.Remove(indexMax);
-
                     firstEdgeBegin = new Vector3(vertices[poligon[indexes[0]][0] - 1].X, vertices[poligon[indexes[0]][0] - 1].Y, vertices[poligon[indexes[0]][0] - 1].Z);
                     firstEdgeEnd = new Vector3(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y, vertices[poligon[indexMax][0] - 1].Z);
 
+                    if (firstEdgeBegin.X < firstEdgeEnd.X)
+                    {
+                        firstEdgeEnd.X += scale;
+                    }
+                    else
+                    {
+                        firstEdgeEnd.X -= scale;
+                    }
+
+                    firstEdgeBegin.Y -= scale;
+                    firstEdgeEnd.Y += scale * 2;
+
+
                     secondEdgeBegin = new Vector3(vertices[poligon[indexes[1]][0] - 1].X, vertices[poligon[indexes[1]][0] - 1].Y, vertices[poligon[indexes[1]][0] - 1].Z);
                     secondEdgeEnd = new Vector3(vertices[poligon[indexMax][0] - 1].X, vertices[poligon[indexMax][0] - 1].Y, vertices[poligon[indexMax][0] - 1].Z);
+
+                    if (secondEdgeBegin.X < firstEdgeEnd.X)
+                    {
+                        firstEdgeEnd.X += scale;
+                    }
+                    else
+                    {
+                        firstEdgeEnd.X -= scale;
+                    }
+
+                    secondEdgeEnd.X = firstEdgeEnd.X;
+                    secondEdgeEnd.Y = firstEdgeEnd.Y;
+
+                    secondEdgeBegin.Y -= scale;
+
+                    if (firstEdgeBegin.X > secondEdgeBegin.X)
+                    {
+                        firstEdgeBegin.X += scale;
+                        secondEdgeBegin.X -= scale;
+                    }
+                    else
+                    {
+                        firstEdgeBegin.X -= scale;
+                        secondEdgeBegin.X += scale;
+                    }
 
                     while (skylineBegin.Y > yMin)
                     {
@@ -357,7 +504,40 @@ namespace WinForms3DModelViewer
                             var secondK = (secondPoint.X - secondEdgeBegin.X) / (secondEdgeEnd.X - secondPoint.X);
                             var secondPointZ = (secondEdgeBegin.Z + secondEdgeEnd.Z * secondK) / (secondK + 1);
 
+                            //if (firstPoint.X < secondPoint.X)
+                            //{
+                            //    firstPoint.X -= scale;
+                            //    secondPoint.X += scale;
+                            //}
+                            //else
+                            //{
+                            //    firstPoint.X += scale;
+                            //    secondPoint.X -= scale;
+                            //}
+
+                            //if (firstPoint.Y < secondPoint.Y)
+                            //{
+                            //    firstPoint.Y -= scale;
+                            //    secondPoint.Y += scale;
+                            //}
+                            //else
+                            //{
+                            //    firstPoint.Y += scale;
+                            //    secondPoint.Y -= scale;
+                            //}
+
                             DrawLine(firstPoint.X, firstPoint.Y, firstPointZ, secondPoint.X, secondPoint.Y, secondPointZ, gr, poligonColorScale);
+
+                            //DrawLine(firstPoint.X, firstPoint.Y, firstPointZ, secondPoint.X, secondPoint.Y, secondPointZ, gr, poligonColorScale);
+
+                            //DrawLine(firstPoint.X >= 0 ? firstPoint.X - scale : firstPoint.X + scale,
+                            //         firstPoint.Y >= 0 ? firstPoint.Y - scale : firstPoint.Y + scale, 
+                            //         firstPointZ, 
+                            //         secondPoint.X >= 0 ? secondPoint.X + scale : secondPoint.X - scale,
+                            //         secondPoint.Y >= 0 ? secondPoint.Y + scale : secondPoint.Y - scale, 
+                            //         secondPointZ, 
+                            //         gr, 
+                            //         poligonColorScale);
                         }
 
                         skylineBegin.Y--;
@@ -393,8 +573,8 @@ namespace WinForms3DModelViewer
 
         private void InitializeZBuffer()
         {
-            var width = pictureBoxPaintArea.Width;
-            var height = pictureBoxPaintArea.Height;
+            var width = pictureBoxPaintArea.Width + 1;
+            var height = pictureBoxPaintArea.Height + 1;
 
             var maxZ = float.MaxValue;
 
@@ -467,6 +647,20 @@ namespace WinForms3DModelViewer
             float lambertComponent = Math.Max(Vector3.Dot(N, L), 0);
 
             return lambertComponent;
+        }
+
+        private void Swap(ref int[] first, ref int[] second)
+        {
+            var temp = first;
+            first = second;
+            second = temp;
+        }
+
+        private void Swap(ref Vector4 first, ref Vector4 second)
+        {
+            var temp = first;
+            first = second;
+            second = temp;
         }
 
         private void _MouseWheel(object sender, MouseEventArgs e)
