@@ -257,39 +257,39 @@ namespace WinForms3DModelViewer
             }
         }
 
-        //public void DrawLine(Vector4 A, Vector4 B, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
-        //{
-        //    Brush brush;
+        public void DrawLine(Vector4 A, Vector4 B, int y, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
+        {
+            Brush brush;
 
-        //    if (colorScale < 0)
-        //    {
-        //        brush = Brushes.White;
-        //    }
-        //    else
-        //    {
-        //        brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
-        //    }
 
-        //    int startX = (int) Math.Ceiling(A.X);
-        //    int endX = (int) Math.Ceiling(B.X);
+            if (colorScale < 0)
+            {
+                brush = Brushes.White;
+            }
+            else
+            {
+                brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
+            }
 
-        //    for (int i = startX; i <= endX; i++)
-        //    {
-        //        float phi = endX == startX ? 1 : (i - startX) /(endX - startX);
-        //        Vector4 P = A + (B - A) * phi;
+            int startX = (int) Math.Ceiling(A.X);
+            int endX = (int) Math.Ceiling(B.X);
+            var z = A.Z;
+            var stepz = (A.Z - B.Z) / (A.X-B.X);
 
-        //        int x = (int) Math.Ceiling(P.X);
-        //        int y = (int) Math.Ceiling(P.Y);
-        //        int z = (int) Math.Ceiling(P.Z);
+            for (int x = startX; x <= endX; x++)
+            {
+                
 
-        //        if (zBuffer[y][x] < z)
-        //        {
-        //            zBuffer[y][x] = z;
+                if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int)y][(int)x] > z)
+                {
+                    zBuffer[y][x] = z;
 
-        //            bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
-        //        }
-        //    }
-        //}
+                    bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
+                }
+
+                z += stepz;
+            }
+        }
 
         //отрисовка модели
         public void Draw()
@@ -303,8 +303,8 @@ namespace WinForms3DModelViewer
             var minX = vertices.Min(x => x.X);
             var maxX = vertices.Max(x => x.X);
 
-            var width = pictureBoxPaintArea.Width;
-            var height = pictureBoxPaintArea.Height;
+            var width = pictureBoxPaintArea.Width+1;
+            var height = pictureBoxPaintArea.Height+1;
 
             if (width == 0 || height == 0)
                 return;
@@ -312,7 +312,7 @@ namespace WinForms3DModelViewer
             var bm = new Bitmap(width, height);
             using (var gr = Graphics.FromImage(bm))
             {
-                gr.Clear(Color.Blue);
+                gr.Clear(Color.Black);
 
                 foreach (var poligon in poligons)
                 {
@@ -343,88 +343,113 @@ namespace WinForms3DModelViewer
 
                         //DrawLine(vertices[k], vertices[j], gr, poligonColorScale);
 
-                        DrawLine(X1, Y1, Z1, X2, Y2, Z2, gr, poligonColorScale);
+                        //DrawLine(X1, Y1, Z1, X2, Y2, Z2, gr, poligonColorScale);
 
-                        if (vertices[k].Y > yMax)
-                        {
-                            indexMax = i;
-                            yMax = vertices[k].Y;
-                        }
+                        //if (vertices[k].Y > yMax)
+                        //{
+                            //indexMax = i;
+                            //yMax = vertices[k].Y;
+                        //}
 
-                        if (vertices[k].Y < yMin)
-                        {
-                            indexMin = i;
-                            yMin = vertices[k].Y;
-                        }
+                        //if (vertices[k].Y < yMin)
+                        //{
+                            //indexMin = i;
+                            //yMin = vertices[k].Y;
+                        //}
                     };
 
                     //////
 
-                    //if ((int)Math.Ceiling(vertices[poligon[0][0] - 1].Y) == (int)Math.Ceiling(vertices[poligon[1][0] - 1].Y) &&
-                    //    (int)Math.Ceiling(vertices[poligon[0][0] - 1].Y) == (int)Math.Ceiling(vertices[poligon[2][0] - 1].Y))
-                    //    continue;
+                    if ((int)Math.Ceiling(vertices[poligon[0][0] - 1].Y) == (int)Math.Ceiling(vertices[poligon[1][0] - 1].Y) &&
+                        (int)Math.Ceiling(vertices[poligon[0][0] - 1].Y) == (int)Math.Ceiling(vertices[poligon[2][0] - 1].Y))
+                        continue;
 
-                    //int[][] sortedPoligonVertices = new int[poligon.Length][];
+                    int[][] sortedPoligonVertices = new int[poligon.Length][];
 
 
-                    //Array.Copy(poligon, sortedPoligonVertices, poligon.Length);
+                    Array.Copy(poligon, sortedPoligonVertices, poligon.Length);
 
-                    //if (vertices[sortedPoligonVertices[0][0] - 1].Y > vertices[sortedPoligonVertices[1][0] - 1].Y)
-                    //{
-                    //    Swap(ref sortedPoligonVertices[0], ref sortedPoligonVertices[1]);
-                    //}
+                    if (vertices[sortedPoligonVertices[0][0] - 1].Y > vertices[sortedPoligonVertices[1][0] - 1].Y)
+                    {
+                        Swap(ref sortedPoligonVertices[0], ref sortedPoligonVertices[1]);
+                    }
 
-                    //if (vertices[sortedPoligonVertices[0][0] - 1].Y > vertices[sortedPoligonVertices[2][0] - 1].Y)
-                    //{
-                    //    Swap(ref sortedPoligonVertices[0], ref sortedPoligonVertices[2]);
-                    //}
+                    if (vertices[sortedPoligonVertices[0][0] - 1].Y > vertices[sortedPoligonVertices[2][0] - 1].Y)
+                    {
+                        Swap(ref sortedPoligonVertices[0], ref sortedPoligonVertices[2]);
+                    }
 
-                    //if (vertices[sortedPoligonVertices[1][0] - 1].Y > vertices[sortedPoligonVertices[2][0] - 1].Y)
-                    //{
-                    //    Swap(ref sortedPoligonVertices[1], ref sortedPoligonVertices[2]);
-                    //}
+                    if (vertices[sortedPoligonVertices[1][0] - 1].Y > vertices[sortedPoligonVertices[2][0] - 1].Y)
+                    {
+                        Swap(ref sortedPoligonVertices[1], ref sortedPoligonVertices[2]);
+                    }
 
-                    //var poligonHeight = (int)Math.Ceiling(vertices[sortedPoligonVertices[2][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y);
+                    var t0 = vertices[sortedPoligonVertices[0][0] - 1];
+                    var t1 = vertices[sortedPoligonVertices[1][0] - 1];
+                    var t2 = vertices[sortedPoligonVertices[2][0] - 1];
+                    
+                    //var poligonHeight = vertices[sortedPoligonVertices[2][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y;
+                    int total_height = (int)(t2.Y-t0.Y);
+                    if (total_height == 0) total_height = (int)(t2.Y - t1.Y);
+                    if (total_height == 0) continue;
+                    if ((int)t0.Y==(int)t1.Y && (int)t0.Y==(int)t2.Y) continue;
+                    for (int y=(int)t0.Y; y<=t1.Y; y++) {
+                        float segment_height = t1.Y-t0.Y+1;
+                        float alpha = (float)(y-t0.Y)/total_height;
+                        float beta  = (float)(y-t0.Y)/segment_height; // be careful with divisions by zero
+                        Vector4 A = t0 + (t2-t0)*alpha;
+                        Vector4 B = t0 + (t1-t0)*beta;
+                        if (A.X>B.X) Swap(ref A, ref B);
+                        DrawLine(A, B, y,  gr, poligonColorScale);
+                    }
+                    for (int y=(int)t1.Y; y<=t2.Y; y++) {
+                        float segment_height =  t2.Y-t1.Y+1;
+                        float alpha = (float)(y-t0.Y)/total_height;
+                        float beta  = (float)(y-t1.Y)/segment_height; // be careful with divisions by zero
+                        Vector4 A = t0 + (t2-t0)*alpha;
+                        Vector4 B = t1 + (t2-t1)*beta;
+                        if (A.X>B.X) Swap(ref A, ref B);
+                        DrawLine(A, B, y,  gr, poligonColorScale);
+                    }
+                    /*
+                    for (int i = 0; i < poligonHeight; i++)
+                    {
+                        bool secondHalf = i > vertices[sortedPoligonVertices[1][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y
+                                                || vertices[sortedPoligonVertices[1][0] - 1].Y == vertices[sortedPoligonVertices[0][0] - 1].Y;
 
-                    //for (int i = 0; i < poligonHeight; i++)
-                    //{
-                    //    bool secondHalf = i > vertices[sortedPoligonVertices[1][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y
-                    //                            || (int)Math.Ceiling(vertices[sortedPoligonVertices[1][0] - 1].Y) == (int)Math.Ceiling(vertices[sortedPoligonVertices[0][0] - 1].Y);
+                        float segmentHeight = secondHalf
+                            ? vertices[sortedPoligonVertices[2][0] - 1].Y - vertices[sortedPoligonVertices[1][0] - 1].Y
+                            : vertices[sortedPoligonVertices[1][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y;
 
-                    //    int segmentHeight = secondHalf
-                    //        ? (int)Math.Ceiling(vertices[sortedPoligonVertices[2][0] - 1].Y - vertices[sortedPoligonVertices[1][0] - 1].Y)
-                    //        : (int)Math.Ceiling(vertices[sortedPoligonVertices[1][0] - 1].Y - vertices[sortedPoligonVertices[0][0] - 1].Y);
+                        float alpha = (float) i / poligonHeight;
+                        float beta = (float) ((i - (secondHalf ? (int) Math.Ceiling(
+                                                       vertices[sortedPoligonVertices[1][0] - 1].Y -
+                                                       vertices[sortedPoligonVertices[0][0] - 1].Y)
+                                                   : 0)) / segmentHeight);
 
-                    //    float alpha = (float) i / poligonHeight;
-                    //    float beta =
-                    //        (float) ((i - (secondHalf
-                    //            ? (int) Math.Ceiling(
-                    //                vertices[sortedPoligonVertices[1][0] - 1].Y -
-                    //                vertices[sortedPoligonVertices[0][0] - 1].Y)
-                    //            : 0)) / segmentHeight);
+                        Vector4 A = vertices[sortedPoligonVertices[0][0] - 1] + (vertices[sortedPoligonVertices[2][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) * alpha;
+                        Vector4 B = secondHalf
+                            ? vertices[sortedPoligonVertices[1][0] - 1] +
+                              (vertices[sortedPoligonVertices[2][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) *
+                              beta
+                            : vertices[sortedPoligonVertices[0][0] - 1] +
+                              (vertices[sortedPoligonVertices[1][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) *
+                              beta;
+                        
 
-                    //    Vector4 A = vertices[sortedPoligonVertices[0][0] - 1] + (vertices[sortedPoligonVertices[2][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) * alpha;
-                    //    Vector4 B = secondHalf
-                    //        ? vertices[sortedPoligonVertices[1][0] - 1] +
-                    //          (vertices[sortedPoligonVertices[2][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) *
-                    //          beta
-                    //        : vertices[sortedPoligonVertices[0][0] - 1] +
-                    //          (vertices[sortedPoligonVertices[1][0] - 1] - vertices[sortedPoligonVertices[0][0] - 1]) *
-                    //          beta;
+                        if (A.X > B.X)
+                        {
+                            Swap(ref A, ref B);
+                        }
 
-                    //    if (A.X > B.X)
-                    //    {
-                    //        Swap(ref A, ref B);
-                    //    }
+                        A = new Vector4((int)Math.Ceiling(A.X), (int)Math.Ceiling(A.Y), (int)Math.Ceiling(A.Z), (int)Math.Ceiling(A.W));
+                        B = new Vector4((int)Math.Ceiling(B.X), (int)Math.Ceiling(B.Y), (int)Math.Ceiling(B.Z), (int)Math.Ceiling(B.W));
 
-                    //    A = new Vector4((int)Math.Ceiling(A.X), (int)Math.Ceiling(A.Y), (int)Math.Ceiling(A.Z), (int)Math.Ceiling(A.W));
-                    //    B = new Vector4((int)Math.Ceiling(B.X), (int)Math.Ceiling(B.Y), (int)Math.Ceiling(B.Z), (int)Math.Ceiling(B.W));
-
-                    //    DrawLine(A, B, gr, poligonColorScale);
-                    //}
+                        DrawLine(A, B, (int)vertices[sortedPoligonVertices[0][0] - 1].Y+i,  gr, poligonColorScale);
+                    }*/
 
                     ////////////
-
+/*
                     var scale = 1;
 
                     var indexes = new List<int> { 0, 1, 2 };
@@ -543,6 +568,7 @@ namespace WinForms3DModelViewer
                         skylineBegin.Y--;
                         skylineEnd.Y--;
                     }
+                    */
                 };
                 
             }
