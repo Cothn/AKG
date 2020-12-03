@@ -14,8 +14,8 @@ namespace WinForms3DModelViewer
 {
     public partial class MainForm : Form
     {
-        //private const string FilesPath = @"D:\Github projects\AKG\Head\";
-        private const string FilesPath = @"D:\RepositHub\AKG\Head\";
+        private const string FilesPath = @"D:\Github projects\AKG\Head\";
+        //private const string MapsPath = @"D:\RepositHub\AKG\Head\";
 
         private List<string> filesNames = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
 
