@@ -14,7 +14,7 @@ namespace WinForms3DModelViewer
 {
     public partial class MainForm : Form
     {
-        readonly Vector3 ambientLightColor = new Vector3(1.1F, 1.1F, 1.1F);
+        
         readonly Vector3 defaultColor = new Vector3(255, 255, 255);
         readonly float shiness = 30;
 
@@ -41,7 +41,7 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
-        Vector4 lightPoint = new Vector4(10, 11, 2F, 0);
+        Vector4 lightPoint = new Vector4(10, 11, 5, 0);
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
@@ -349,12 +349,9 @@ namespace WinForms3DModelViewer
                                 zBuffer[(int) y][(int) x] = z;
 
                                 Vector4 pixelVector = new Vector4(x, y, z, 0);
-                                pixelVector = Vector4.Transform(pixelVector, fromPortToProjectionMatrix);
-                                pixelVector = Vector4.Transform(pixelVector, fromProjectionToViewerMatrix);
-
-                                var Aviewer = viewerVertices[sortedPoligonVertices[2][0] - 1];
-                                var Bviewer = viewerVertices[sortedPoligonVertices[1][0] - 1];
-                                var Cviewer = viewerVertices[sortedPoligonVertices[0][0] - 1];
+                                //pixelVector = Vector4.Transform(pixelVector, fromPortToProjectionMatrix);
+                                //pixelVector = Vector4.Transform(pixelVector, fromProjectionToViewerMatrix);
+                                
 
                                 var Anormal = normalVertices[sortedPoligonVertices[2][2] - 1];
                                 var Bnormal = normalVertices[sortedPoligonVertices[1][2] - 1];
@@ -372,9 +369,9 @@ namespace WinForms3DModelViewer
 
                                 //var pixelNormal = CountPixelNormalByVertexesAndNormals()
 
-                                var pixelNormal = CountPixelNormalByVertexesAndNormals(Aviewer, Bviewer, Cviewer, pixelVector, Anormal, Bnormal, Cnormal);
+                                var pixelNormal = CountPixelNormalByVertexesAndNormals(A, B, C, pixelVector, Anormal, Bnormal, Cnormal);
 
-                                Vector3 color = VertexColorByFongo(new Vector3(pixelVector.X, pixelVector.Y, pixelVector.Z), pixelNormal, defaultColor);
+                                Vector3 color = VertexColorByFongo( pixelNormal);
                                 //Vector3 color = VertexColorByLambertWithColor(new Vector3(pixelVector.X, pixelVector.Y, pixelVector.Z), pixelNormal, defaultColor);
 
                                 brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255), (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
@@ -413,7 +410,7 @@ namespace WinForms3DModelViewer
             var bm = new Bitmap(width, height);
             using (var gr = Graphics.FromImage(bm))
             {
-                gr.Clear(Color.Blue);
+                gr.Clear(Color.Black);
 
                 foreach (var poligon in poligons)
                 {
@@ -580,30 +577,39 @@ namespace WinForms3DModelViewer
         //    return averageFongoComponent;
         //}
 
-        private Vector3 VertexColorByFongo(Vector3 vertexPosition, Vector3 vertexNormal, Vector3 color)
+        private Vector3 VertexColorByFongo( Vector3 vertexNormal)
         {
-            Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) - vertexPosition;
+            var ambientLightColor = new Vector3(25F, 15F, 25F);
+            var diffuzeKoef = 1;
+            var specularKoef = 2;
+            var diffuseColor = new Vector3(12F, 108F, 1F);;
+            var specularColor = new Vector3(120F, 120F, 120F);;
+            Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) ;
 
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
-            Vector3 diffuseLight = color * lambertComponent;
+            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, -L), 0);
+            Vector3 diffuseLight = diffuseColor * lambertComponent;
 
             //Vector3 eyeVector = new Vector3(-vertexPosition.X, -vertexPosition.Y, -vertexPosition.Z);
             //Vector3 eyeVector = new Vector3(-viewPoint.X, -viewPoint.Y, -viewPoint.Z);
 
-            Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexPosition;
+            //Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexPosition;
+            Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z);
             Vector3 eyeVector = Vector3.Normalize(new Vector3(eyeDirection.X, eyeDirection.Y, eyeDirection.Z));
 
             Vector3 R = Vector3.Normalize(eyeVector);
-            Vector3 E = Vector3.Reflect(L, N);
+            Vector3 E = Vector3.Reflect(-L, N);
 
-            float specular = (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
-            Vector3 specularLight = color * specular;
+            float specular = specularKoef * (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
+            Vector3 specularLight = specularColor * specular;
 
-            //Vector3 sumColor = ambientLightColor + diffuseLight + specularLight;
-            Vector3 sumColor = diffuseLight;
+            Vector3 sumColor = ambientLightColor;
+            sumColor += diffuseLight;
+            sumColor += specularLight;
+            
+            //Vector3 sumColor = diffuseLight;
 
             return sumColor;
         }
