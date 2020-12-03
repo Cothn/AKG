@@ -40,7 +40,7 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
-        Vector4 lightPoint = new Vector4(10, 11, 5, 0);
+        Vector4 lightPoint = new Vector4(10, 11, 2, 0);
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
@@ -61,8 +61,8 @@ namespace WinForms3DModelViewer
         {
             ObjParser parser = new ObjParser();
             (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
-                = //parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
-            parser.Parse(@"D:\Github projects\AKG\Head\Model.obj");
+                = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+            //parser.Parse(@"D:\Github projects\AKG\Head\Model.obj");
             //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
             Transform();
         }
@@ -486,7 +486,7 @@ namespace WinForms3DModelViewer
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, -L), 0);
+            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(-N, -L), 0);
             Vector3 diffuseLight = diffuseColor * lambertComponent;
 
 
@@ -494,7 +494,7 @@ namespace WinForms3DModelViewer
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
             Vector3 R = Vector3.Normalize(eyeVector);
-            Vector3 E = Vector3.Reflect(-L, N);
+            Vector3 E = Vector3.Reflect(L, -N);
 
             float specular = specularKoef * (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
             Vector3 specularLight = specularColor * specular;
