@@ -14,7 +14,11 @@ namespace WinForms3DModelViewer
 {
     public partial class MainForm : Form
     {
-        
+        private const string FilesPath = @"D:\Github projects\AKG\Head\";
+        //private const string MapsPath = @"D:\RepositHub\AKG\Head\";
+
+        private List<string> filesNames = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
+
         readonly Vector3 defaultColor = new Vector3(255, 255, 255);
         readonly float shiness = 30;
 
@@ -51,6 +55,14 @@ namespace WinForms3DModelViewer
 
         private int skippedPixelsDraw = 0;
 
+        private Bitmap albedoMap;
+        private Bitmap normalMap;
+        private Bitmap specularMap;
+
+        public bool isAlbedoMap = true;
+        public bool isNormalMap = false;
+        public bool isSpecularMap = false;
+
         public MainForm()
         {
             InitializeComponent();
@@ -62,8 +74,24 @@ namespace WinForms3DModelViewer
             ObjParser parser = new ObjParser();
             (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
                 = //parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
-            parser.Parse(@"D:\Github projects\AKG\Head\Model.obj");
+            parser.Parse(FilesPath + filesNames[0]);
             //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
+
+            if (isAlbedoMap)
+            {
+                albedoMap = new Bitmap(FilesPath + filesNames[1]);
+            }
+
+            if (isNormalMap)
+            {
+                normalMap = new Bitmap(FilesPath + filesNames[2]);
+            }
+
+            if (isSpecularMap)
+            {
+                specularMap = new Bitmap(FilesPath + filesNames[3]);
+            }
+
             Transform();
         }
 
@@ -71,6 +99,7 @@ namespace WinForms3DModelViewer
         {
             vertices = new List<Vector4>(originalVertices);
             normalVertices = new List<Vector3>(originalNormalVertices);
+            textureVertices = new List<Vector3>(originalTextureVertices);
             poligons = new List<int[][]>(originalPoligons);
 
             var eye = this.viewPoint;
@@ -289,9 +318,30 @@ namespace WinForms3DModelViewer
                                 var Bnormal = normalVertices[sortedPoligonVertices[1][2] - 1];
                                 var Cnormal = normalVertices[sortedPoligonVertices[0][2] - 1];
 
-                                var pixelNormal = CountPixelNormalByVertexesAndNormals(A, B, C, pixelVector, Anormal, Bnormal, Cnormal);
+                                var pixelNormal = LinearInterpolation(A, B, C, pixelVector, Anormal, Bnormal, Cnormal);
 
-                                Vector3 color = VertexColorByFongo(pixelNormal);
+
+                                Vector3 diffuseAndAmbientKoef = new Vector3(0,0,0);
+
+                                if (isAlbedoMap)
+                                {
+                                    var Atexture = textureVertices[sortedPoligonVertices[2][1] - 1];
+                                    var Btexture = textureVertices[sortedPoligonVertices[1][1] - 1];
+                                    var Ctexture = textureVertices[sortedPoligonVertices[0][1] - 1];
+
+                                    var pixelTexture = LinearInterpolation(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
+
+                                    pixelTexture.X *= albedoMap.Width;
+                                    pixelTexture.Y *= albedoMap.Height;
+
+                                    Color albedoColor = albedoMap.GetPixel((int)pixelTexture.X, albedoMap.Height - (int)pixelTexture.Y);
+
+                                    (diffuseAndAmbientKoef.X, diffuseAndAmbientKoef.Y, diffuseAndAmbientKoef.Z) = (albedoColor.R, albedoColor.G, albedoColor.B);
+                                }
+
+
+
+                                Vector3 color = VertexColorByFongo(pixelNormal, diffuseAndAmbientKoef, diffuseAndAmbientKoef, new Vector3(0,0,0));
 
                                 brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255), (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
 
@@ -473,12 +523,15 @@ namespace WinForms3DModelViewer
             return lambertComponent * color;
         }
 
-        private Vector3 VertexColorByFongo( Vector3 vertexNormal)
+        private Vector3 VertexColorByFongo(Vector3 vertexNormal, Vector3 ambientKoef, Vector3 diffuseKoef, Vector3 specularKoef)
         {
-            var ambientLightColor = new Vector3(25F, 15F, 25F);
-            var diffuzeKoef = 1;
-            var specularKoef = 2;
-            var diffuseColor = new Vector3(12F, 108F, 1F);
+            //var ambientLightColor = new Vector3(25F, 15F, 25F) + ambientKoef;
+
+            //var diffuseColor = new Vector3(12F, 108F, 1F);
+            //var specularColor = new Vector3(120F, 120F, 120F);
+
+            var ambientLightColor = ambientKoef;
+            var diffuseColor = new Vector3(30F, 30F, 30F);
             var specularColor = new Vector3(120F, 120F, 120F);
 
             Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) ;
@@ -486,9 +539,9 @@ namespace WinForms3DModelViewer
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, -L), 0);
+            float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
             Vector3 diffuseLight = diffuseColor * lambertComponent;
-
+            diffuseLight += diffuseKoef;
 
             Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z);
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
@@ -496,8 +549,9 @@ namespace WinForms3DModelViewer
             Vector3 R = Vector3.Normalize(eyeVector);
             Vector3 E = Vector3.Reflect(-L, N);
 
-            float specular = specularKoef * (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
+            float specular = (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
             Vector3 specularLight = specularColor * specular;
+            specularLight += specularKoef;
 
             Vector3 sumColor = ambientLightColor;
             sumColor += diffuseLight;
@@ -506,7 +560,7 @@ namespace WinForms3DModelViewer
             return sumColor;
         }
 
-        private Vector3 CountPixelNormalByVertexesAndNormals(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
+        private Vector3 LinearInterpolation(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
         {
             var koeffs = CountSystemOfEquations(a1, a2, a3, b);
 
