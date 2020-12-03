@@ -35,9 +35,8 @@ namespace WinForms3DModelViewer
         bool neadDrow = true;
 
         Vector3 viewPoint = new Vector3(0, 0, 4);
+        Vector3 eyePoint;
 
-        private Vector4 eyePoint;
-        //Vector3 viewPoint = new Vector3(0, 5, 15);
         float delta = 0.1f;
         float aDelta = 1f;
 
@@ -45,9 +44,6 @@ namespace WinForms3DModelViewer
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
-
-        private Matrix4x4 fromPortToProjectionMatrix;
-        private Matrix4x4 fromProjectionToViewerMatrix;
 
         float xRotation = 0;
         float yRotation = 0;
@@ -81,6 +77,8 @@ namespace WinForms3DModelViewer
             var target = new Vector3(0, 0, 0);
             var up = new Vector3(0, 1, 0);
 
+            eyePoint = eye;
+
             var k = (float)Math.PI / 180;
             var rm = Matrix4x4.CreateFromYawPitchRoll((yRotation % 360) * k, (xRotation % 360) * k, (zRotation % 360) * k);
 
@@ -96,21 +94,6 @@ namespace WinForms3DModelViewer
             var viewPortMatrix = ToViewPortCoordinates();
 
             var mainMatrix = viewerMatrix * projectionMatrix;
-
-            Matrix4x4.Invert(viewPortMatrix, out var FviewPortMatrix);
-            Matrix4x4.Invert(projectionMatrix, out var FviewProjectionMatrix);
-            //fromPortToViewerMatrix = FviewPortMatrix;
-            fromPortToProjectionMatrix = FviewPortMatrix;
-            fromProjectionToViewerMatrix = FviewProjectionMatrix;
-
-            //TransformVectors(mainMatrix);
-
-            //eyePoint = eye;
-            eyePoint = new Vector4(viewPoint.X, viewPoint.Y, viewPoint.Z, 0);
-            //eyePoint = new Vector4(eye.X, eye.Y, eye.Z, 0);
-            //eyePoint = Vector4.Transform(eyePoint, viewerMatrix);
-
-            //lightPoint = Vector4.Transform(eyePoint, viewerMatrix);
 
             TransformVectors(viewerMatrix);
             TransformNormals(viewerMatrix);
@@ -230,54 +213,6 @@ namespace WinForms3DModelViewer
             return viewerMatrix;
         }
 
-        /*
-                public void DrawLine(float x1, float y1, float z1, float x2, float y2, float z2, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
-                {
-                    float x = x1;
-                    float y = y1;
-                    float z = z1;
-                    float dx = Math.Abs(x2 - x1);
-                    float dy = Math.Abs(y2 - y1);
-                    var length = dx >= dy ? dx : dy;
-                    var stepx = (x2 - x1) / length;
-                    var stepy = (y2 - y1) / length;
-                    var stepz = (z2 - z1) / length;
-
-                    Brush brush;
-
-                    if (colorScale < 0)
-                    {
-                        brush = Brushes.White;
-                    }
-                    else
-                    {
-                        brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
-                    }
-
-                    //Brush bBrush = Brushes.Black;
-
-                    for (int i = 1; i <= (int)length; i++)
-                    {
-                        if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int)y][(int)x] > z)
-                        {
-                            zBuffer[(int)y][(int)x] = z;
-
-                            bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
-                        }
-                        else
-                        {
-                            skippedPixelsDraw++;
-                            //bm.FillRectangle(bBrush, x, y, pointWidth, pointHeight);
-                        }
-
-                        x += stepx;
-                        y += stepy;
-                        z += stepz;
-                    }
-                }
-        */
-        //public void DrawTriangle(Vector4 A, Vector4 B, Vector4 C, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
-        //public void DrawTriangle(Vector4 A, Vector4 B, Vector4 C, Graphics bm, int pointWidth = 1, int pointHeight = 1)
         public void DrawTriangle(int[][] poligon, Graphics bm, int pointWidth = 1, int pointHeight = 1)
         {
             int[][] sortedPoligonVertices = new int[poligon.Length][];
@@ -349,30 +284,14 @@ namespace WinForms3DModelViewer
                                 zBuffer[(int) y][(int) x] = z;
 
                                 Vector4 pixelVector = new Vector4(x, y, z, 0);
-                                //pixelVector = Vector4.Transform(pixelVector, fromPortToProjectionMatrix);
-                                //pixelVector = Vector4.Transform(pixelVector, fromProjectionToViewerMatrix);
-                                
 
                                 var Anormal = normalVertices[sortedPoligonVertices[2][2] - 1];
                                 var Bnormal = normalVertices[sortedPoligonVertices[1][2] - 1];
                                 var Cnormal = normalVertices[sortedPoligonVertices[0][2] - 1];
 
-                                //Vector3 pixelNormal1 = CountPixelNormal(A, B, pixelVector);
-                                //Vector3 pixelNormal1 = CountPixelNormal(A, B, C, pixelVector);
-                                //Vector3 pixelNormal = CountPixelNormal(Aviewer, Bviewer, pixelVector);
-
-                                //Vector4 pixelNormal2 = new Vector4(pixelNormal1.X, pixelNormal1.Y, pixelNormal1.Z, 0);
-                                //pixelNormal2 = Vector4.Transform(pixelNormal2, fromPortToProjectionMatrix);
-                                //pixelNormal2 = Vector4.Transform(pixelNormal2, fromProjectionToViewerMatrix);
-
-                                //var pixelNormal = new Vector3(pixelNormal2.X, pixelNormal2.Y, pixelNormal2.Z);
-
-                                //var pixelNormal = CountPixelNormalByVertexesAndNormals()
-
                                 var pixelNormal = CountPixelNormalByVertexesAndNormals(A, B, C, pixelVector, Anormal, Bnormal, Cnormal);
 
-                                Vector3 color = VertexColorByFongo( pixelNormal);
-                                //Vector3 color = VertexColorByLambertWithColor(new Vector3(pixelVector.X, pixelVector.Y, pixelVector.Z), pixelNormal, defaultColor);
+                                Vector3 color = VertexColorByFongo(pixelNormal);
 
                                 brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255), (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
 
@@ -421,9 +340,6 @@ namespace WinForms3DModelViewer
                     float poligonColorScale;
                     Vector3 poligonColor;
 
-                    //poligonColorScale = FindPoligonLambertComponent(poligon);
-                    //poligonColor = FindPoligonFongoColor(poligon);
-
                     for (int i = 0; i < poligon.Length; i++)
                     {
                         var k = poligon[i][0] - 1;
@@ -437,12 +353,7 @@ namespace WinForms3DModelViewer
                         var Z2 = (vertices[j].Z);
                     }
 
-                    //DrawTriangle(t2, t1, t0,  gr, poligonColorScale);
-                    //DrawTriangle(t2, t1, t0, gr, poligonColor);
-
-                    //DrawTriangle(t2, t1, t0, gr);
                     DrawTriangle(poligon, gr);
-
                 };
                 
             }
@@ -562,28 +473,14 @@ namespace WinForms3DModelViewer
             return lambertComponent * color;
         }
 
-        //private Vector3 FindPoligonFongoColor(int[][] poligon)
-        //{
-        //    Vector3 averageFongoComponent = VertexColorByFongo(viewerVertices[poligon[0][0] - 1], normalVertices[poligon[0][2] - 1], defaultColor); ;
-
-        //    for (int i = 1; i < poligon.Length; i++)
-        //    {
-        //        averageFongoComponent +=
-        //            VertexColorByFongo(viewerVertices[poligon[i][0] - 1], normalVertices[poligon[i][2] - 1], defaultColor);
-        //    }
-
-        //    averageFongoComponent /= poligon.Length;
-
-        //    return averageFongoComponent;
-        //}
-
         private Vector3 VertexColorByFongo( Vector3 vertexNormal)
         {
             var ambientLightColor = new Vector3(25F, 15F, 25F);
             var diffuzeKoef = 1;
             var specularKoef = 2;
-            var diffuseColor = new Vector3(12F, 108F, 1F);;
-            var specularColor = new Vector3(120F, 120F, 120F);;
+            var diffuseColor = new Vector3(12F, 108F, 1F);
+            var specularColor = new Vector3(120F, 120F, 120F);
+
             Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) ;
 
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
@@ -592,12 +489,9 @@ namespace WinForms3DModelViewer
             float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, -L), 0);
             Vector3 diffuseLight = diffuseColor * lambertComponent;
 
-            //Vector3 eyeVector = new Vector3(-vertexPosition.X, -vertexPosition.Y, -vertexPosition.Z);
-            //Vector3 eyeVector = new Vector3(-viewPoint.X, -viewPoint.Y, -viewPoint.Z);
 
-            //Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexPosition;
             Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z);
-            Vector3 eyeVector = Vector3.Normalize(new Vector3(eyeDirection.X, eyeDirection.Y, eyeDirection.Z));
+            Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
             Vector3 R = Vector3.Normalize(eyeVector);
             Vector3 E = Vector3.Reflect(-L, N);
@@ -608,60 +502,8 @@ namespace WinForms3DModelViewer
             Vector3 sumColor = ambientLightColor;
             sumColor += diffuseLight;
             sumColor += specularLight;
-            
-            //Vector3 sumColor = diffuseLight;
 
             return sumColor;
-        }
-
-        private Vector3 CountPixelNormal(Vector4 firstVertex, Vector4 secondVertex, Vector4 pixel)
-        {
-            //firstVertex = Vector4.Transform(firstVertex, fromPortToProjectionMatrix);
-            //secondVertex = Vector4.Transform(secondVertex, fromPortToProjectionMatrix);
-            //pixel = Vector4.Transform(pixel, fromPortToProjectionMatrix);
-
-            //firstVertex *= firstVertex.W;
-            //secondVertex *= secondVertex.W;
-
-            //firstVertex = Vector4.Transform(firstVertex, fromProjectionToViewerMatrix);
-            //secondVertex = Vector4.Transform(secondVertex, fromProjectionToViewerMatrix);
-            //pixel = Vector4.Transform(pixel, fromProjectionToViewerMatrix);
-
-            var vector1 = firstVertex - pixel;
-            var vector2 = secondVertex - pixel;
-            var surfaceNormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
-                (vector1.Z * vector2.X - vector1.X * vector2.Z),
-                (vector1.X * vector2.Y - vector1.Y * vector2.X));
-
-            return surfaceNormal;
-        }
-
-        private Vector3 CountPixelNormal(Vector4 firstVertex, Vector4 secondVertex, Vector4 thirdVertex, Vector4 pixel)
-        {
-            //firstVertex = Vector4.Transform(firstVertex, fromPortToProjectionMatrix);
-            //secondVertex = Vector4.Transform(secondVertex, fromPortToProjectionMatrix);
-            //pixel = Vector4.Transform(pixel, fromPortToProjectionMatrix);
-
-            //firstVertex *= firstVertex.W;
-            //secondVertex *= secondVertex.W;
-
-            //firstVertex = Vector4.Transform(firstVertex, fromProjectionToViewerMatrix);
-            //secondVertex = Vector4.Transform(secondVertex, fromProjectionToViewerMatrix);
-            //pixel = Vector4.Transform(pixel, fromProjectionToViewerMatrix);
-
-            var vector1 = firstVertex - pixel;
-            var vector2 = secondVertex - pixel;
-            var surfaceNormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
-                (vector1.Z * vector2.X - vector1.X * vector2.Z),
-                (vector1.X * vector2.Y - vector1.Y * vector2.X));
-
-            Vector3 vector11 = surfaceNormal;
-            vector2 = thirdVertex - pixel;
-            surfaceNormal = new Vector3((vector11.Y * vector2.Z - vector11.Z * vector2.Y),
-                (vector11.Z * vector2.X - vector11.X * vector2.Z),
-                (vector11.X * vector2.Y - vector11.Y * vector2.X));
-
-            return surfaceNormal;
         }
 
         private Vector3 CountPixelNormalByVertexesAndNormals(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
@@ -689,20 +531,6 @@ namespace WinForms3DModelViewer
             return resultVector;
 
         }
-
-        //private (float, float, float) CountSystemOfEquations(float x1, float y1, float z1, float x2, float y2, float z2,
-        //    float x3, float y3, float z3, float x0, float y0, float z0)
-        //{
-        //    float l3 =
-        //        (z0 - x0 * x1 * y2 * z1 + x0 * x2 * y1 * z1 + x1 * x2 * y0 * z1 + x0 * x2 * y1 * z1 - x1 * x1 * y0 * z2 + x0 * x1 * y1 * z2)
-        //        / (z3 - x1 * x2 * y3 * z1 - x3 * z1 - x2 * x3 * y1 * z1 - x1 * x1 * y3 * z2 - x1 * x3 * y1 * z2);
-
-        //    float l2 = (y0 * x1 - x0 * y1 - l3 * (y3 * x1 - x3 * y1)) / (y2 * x1 - x2 * y1);
-
-        //    float l1 = (x0 - l2 * x2 - l3 * x3) / x1;
-
-        //    return (l1, l2, l3);
-        //}
 
         private void Swap(ref int[] first, ref int[] second)
         {
