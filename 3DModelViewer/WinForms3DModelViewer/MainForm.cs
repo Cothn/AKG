@@ -14,6 +14,10 @@ namespace WinForms3DModelViewer
 {
     public partial class MainForm : Form
     {
+        readonly Vector3 ambientLightColor = new Vector3(0.1F, 0.1F, 0.1F);
+        readonly Vector3 defaultColor = new Vector3(255, 255, 255);
+        readonly float shiness = 30;
+
         private List<Vector4> vertices;
         private List<Vector4> originalVertices;
         private List<Vector3> normalVertices;
@@ -57,7 +61,8 @@ namespace WinForms3DModelViewer
             ObjParser parser = new ObjParser();
             (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
                 = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
-                //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
+            //parser.Parse(@"D:\Github projects\AKG\Head\Model.obj");
+            //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
             Transform();
         }
 
@@ -254,19 +259,22 @@ namespace WinForms3DModelViewer
             }
         }
 */
-        public void DrawTriangle(Vector4 A, Vector4 B, Vector4 C, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
+        //public void DrawTriangle(Vector4 A, Vector4 B, Vector4 C, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
+        public void DrawTriangle(Vector4 A, Vector4 B, Vector4 C, Graphics bm, Vector3 color, int pointWidth = 1, int pointHeight = 1)
         {
             Brush brush;
             var startVector = A;
 
-            if (colorScale < 0)
-            {
-                brush = Brushes.White;
-            }
-            else
-            {
-                brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
-            }
+            //if (colorScale < 0)
+            //{
+            //    brush = Brushes.White;
+            //}
+            //else
+            //{
+            //    brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
+            //}
+
+            brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255) , (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
 
 
             for (int y = (int) Math.Floor(startVector.Y); y >= (int) Math.Ceiling(C.Y); y--)
@@ -354,9 +362,10 @@ namespace WinForms3DModelViewer
                     float yMin = float.MaxValue;
                     int indexMin = -1;
                     float poligonColorScale;
+                    Vector3 poligonColor;
 
-                    poligonColorScale = FindPoligonLambertComponent(poligon);
-
+                    //poligonColorScale = FindPoligonLambertComponent(poligon);
+                    poligonColor = FindPoligonFongoColor(poligon);
 
                     for (int i = 0; i < poligon.Length; i++)
                     {
@@ -395,8 +404,9 @@ namespace WinForms3DModelViewer
                     var t1 = vertices[sortedPoligonVertices[1][0] - 1];
                     var t2 = vertices[sortedPoligonVertices[2][0] - 1];
                     
-                    DrawTriangle(t2, t1, t0,  gr, poligonColorScale);
-                    
+                    //DrawTriangle(t2, t1, t0,  gr, poligonColorScale);
+                    DrawTriangle(t2, t1, t0, gr, poligonColor);
+
                 };
                 
             }
@@ -501,6 +511,44 @@ namespace WinForms3DModelViewer
             float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
 
             return lambertComponent;
+        }
+
+        private Vector3 FindPoligonFongoColor(int[][] poligon)
+        {
+            Vector3 averageFongoComponent = VertexColorByFongo(viewerVertices[poligon[0][0] - 1], normalVertices[poligon[0][2] - 1], defaultColor); ;
+
+            for (int i = 1; i < poligon.Length; i++)
+            {
+                averageFongoComponent +=
+                    VertexColorByFongo(viewerVertices[poligon[i][0] - 1], normalVertices[poligon[i][2] - 1], defaultColor);
+            }
+
+            averageFongoComponent /= poligon.Length;
+
+            return averageFongoComponent;
+        }
+
+        private Vector3 VertexColorByFongo(Vector4 vertexPosition, Vector3 vertexNormal, Vector3 color)
+        {
+            Vector4 lightDirection = lightPoint - vertexPosition;
+
+            Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
+            Vector3 N = Vector3.Normalize(vertexNormal);
+
+            float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
+            Vector3 diffuseLight = color * lambertComponent;
+
+            Vector3 eyeVector = new Vector3(-vertexPosition.X, -vertexPosition.Y, -vertexPosition.Z);
+
+            Vector3 R = Vector3.Normalize(eyeVector);
+            Vector3 E = Vector3.Reflect(L, N);
+
+            float specular = (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
+            Vector3 specularLight = color * specular;
+
+            Vector3 sumColor = ambientLightColor + diffuseLight + specularLight;
+
+            return sumColor;
         }
 
         private void Swap(ref int[] first, ref int[] second)
