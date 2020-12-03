@@ -24,17 +24,27 @@ namespace WinForms3DModelViewer
         private List<int[][]> originalPoligons;
         private List<int[][]> poligons;
 
+        private float[][] zBuffer;
+
         Point lastPoint = Point.Empty;
         bool isMouseDown = false;
+        bool neadDrow = true;
 
         Vector3 viewPoint = new Vector3(0, 0, 4);
+        //Vector3 viewPoint = new Vector3(0, 5, 15);
         float delta = 0.1f;
         float aDelta = 1f;
+
+        Vector4 lightPoint = new Vector4(10, 11, 2F, 0);
+        private List<Vector4> worldVertices;
+        private List<Vector4> viewerVertices;
+        private List<Vector4> projectionVertices;
 
         float xRotation = 0;
         float yRotation = 0;
         float zRotation = 0;
-        
+
+        private int skippedPixelsDraw = 0;
 
         public MainForm()
         {
@@ -47,12 +57,14 @@ namespace WinForms3DModelViewer
             ObjParser parser = new ObjParser();
             (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
                 = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+                //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
             Transform();
         }
 
         public void Transform()
         {
             vertices = new List<Vector4>(originalVertices);
+            normalVertices = new List<Vector3>(originalNormalVertices);
             poligons = new List<int[][]>(originalPoligons);
 
             var eye = this.viewPoint;
@@ -68,6 +80,7 @@ namespace WinForms3DModelViewer
 
             //Place and transform model from local to Viewer coordinates
             var viewerMatrix = ToViewerCoordinates(eye, target, up);
+            
 
             var projectionMatrix = ToProjectionCoordinates();
 
@@ -75,30 +88,58 @@ namespace WinForms3DModelViewer
 
             var mainMatrix = viewerMatrix * projectionMatrix;
 
-            TransformVectors(mainMatrix);
+            //TransformVectors(mainMatrix);
+
+            TransformVectors(viewerMatrix);
+            TransformNormals(viewerMatrix);
+
+            viewerVertices = new List<Vector4>(vertices);
+
+            TransformVectors(projectionMatrix);
+            //TransformNormals(projectionMatrix);
+
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
             {
                 vertices[i] /= vertices[i].W;
             }
 
+            projectionVertices = new List<Vector4>(vertices);
 
+            removePoligons(poligons, this.viewPoint);
+            
+            TransformVectors(viewPortMatrix);
+        }
 
+        public void removePoligons(List<int[][]> poligons, Vector3 eye)
+        {
             for (int j = 0; j < poligons.Count; j++)
             {
                 var poligon = poligons[j];
 
                 // Remove polygon cut with proj matrix
-
                 if (poligon.Any(i => vertices[i[0] - 1].Z < 0 || vertices[i[0] - 1].Z > 1))
                 {
-                    //Console.WriteLine("1");
                     poligons.RemoveAt(j);
                     j--;
                 }
-            }
-            TransformVectors(viewPortMatrix);
+                else
+                {
+                    var vector1 = vertices[poligon[1][0] - 1] - vertices[poligon[0][0] - 1];
+                    var vector2 = vertices[poligon[2][0] - 1] - vertices[poligon[0][0] - 1];
+                    var surfaceNormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                        (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                        (vector1.X * vector2.Y - vector1.Y * vector2.X));
 
+
+                    if (surfaceNormal.X * eye.X + surfaceNormal.Y * eye.Y + surfaceNormal.Z * eye.Z < 0.0)
+                    {
+                        poligons.RemoveAt(j);
+                        j--;
+                    }
+
+                }
+            }
         }
         
 
@@ -161,38 +202,142 @@ namespace WinForms3DModelViewer
 
             var viewerMatrix = new Matrix4x4(m00, 0, 0, 0,
                                                0, m11, 0, 0,
-                                               0, 0, m22, 0,
-                                               m03, m13, m22, 1);
+                                               0, 0, 1, 0,
+                                               m03, m13, 0, 1);
             
             return viewerMatrix;
         }
         
-        public void DrawLine(float x1, float y1, float x2, float y2, Graphics bm)
+/*
+        public void DrawLine(float x1, float y1, float z1, float x2, float y2, float z2, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
         {
             float x = x1;
             float y = y1;
+            float z = z1;
             float dx = Math.Abs(x2 - x1);
             float dy = Math.Abs(y2 - y1);
             var length = dx >= dy ? dx : dy;
-            var stepx = (x2 - x1) / (float)length;
-            var stepy = (y2 - y1) / (float)length;
+            var stepx = (x2 - x1) / length;
+            var stepy = (y2 - y1) / length;
+            var stepz = (z2 - z1) / length;
 
-            Brush aBrush = (Brush)Brushes.White;
-            //bm.FillRectangle(aBrush, x, y, 1, 1);
+            Brush brush;
+
+            if (colorScale < 0)
+            {
+                brush = Brushes.White;
+            }
+            else
+            {
+                brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
+            }
+
+            //Brush bBrush = Brushes.Black;
+
             for (int i = 1; i <= (int)length; i++)
             {
-                bm.FillRectangle(aBrush, x, y, 1, 1);
+                if (y > 0 && y < pictureBoxPaintArea.Height && x > 0 && x < pictureBoxPaintArea.Width && zBuffer[(int)y][(int)x] > z)
+                {
+                    zBuffer[(int)y][(int)x] = z;
+
+                    bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
+                }
+                else
+                {
+                    skippedPixelsDraw++;
+                    //bm.FillRectangle(bBrush, x, y, pointWidth, pointHeight);
+                }
+
                 x += stepx;
                 y += stepy;
+                z += stepz;
             }
         }
-        
+*/
+        public void DrawTriangle(Vector4 A, Vector4 B, Vector4 C, Graphics bm, float colorScale = -1, int pointWidth = 1, int pointHeight = 1)
+        {
+            Brush brush;
+            var startVector = A;
+
+            if (colorScale < 0)
+            {
+                brush = Brushes.White;
+            }
+            else
+            {
+                brush = new SolidBrush(Color.FromArgb((int)(255 * colorScale), (int)(255 * colorScale), (int)(255 * colorScale)));
+            }
+
+
+            for (int y = (int) Math.Floor(startVector.Y); y >= (int) Math.Ceiling(C.Y); y--)
+            {
+                if (y > 0 && y < pictureBoxPaintArea.Height)
+
+                {
+                    float startX;
+                    float startZ;
+                    if (y >= B.Y)
+                    {
+                        var BAK = (y - B.Y) / (startVector.Y - y);
+                        startX = (B.X + startVector.X * BAK) / (BAK + 1);
+                        startZ = (B.Z + startVector.Z * BAK) / (BAK + 1);
+                    }
+                    else
+                    {
+                        var CBK = (y - C.Y) / (B.Y - y);
+                        startX = (C.X + B.X * CBK) / (CBK + 1);
+                        startZ = (C.Z + B.Z * CBK) / (CBK + 1);
+                    }
+
+                    
+                    var CAK = (y - C.Y) / (startVector.Y - y);
+    
+                    var endX = (C.X + startVector.X * CAK) / (CAK + 1);
+                    var endZ = (C.Z + startVector.Z * CAK) / (CAK + 1);
+                    if (startX > endX)
+                    {
+                        Swap(ref startX, ref endX);
+                        Swap(ref startZ, ref endZ);
+                    }
+
+                    for (int x = (int) Math.Ceiling(startX); x <= (int) Math.Floor(endX); x++)
+                    {
+                        if (x > 0 && x < pictureBoxPaintArea.Width)
+                        {
+                            
+                            var K = (x - startX) / (endX - x);
+                            var z = (startZ + endZ *K) / (K + 1);
+                            if (zBuffer[(int) y][(int) x] > z)
+                            {
+                                zBuffer[(int) y][(int) x] = z;
+
+                                bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
+                            }
+                            else
+                            {
+                                skippedPixelsDraw++;
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
         //отрисовка модели
         public void Draw()
         {
+            InitializeZBuffer();
 
-            var width = pictureBoxPaintArea.Width;
-            var height = pictureBoxPaintArea.Height;
+            SortPoligonsByMinZ();
+
+            skippedPixelsDraw = 0;
+
+            var minX = vertices.Min(x => x.X);
+            var maxX = vertices.Max(x => x.X);
+
+            var width = pictureBoxPaintArea.Width+1;
+            var height = pictureBoxPaintArea.Height+1;
 
             if (width == 0 || height == 0)
                 return;
@@ -204,7 +349,15 @@ namespace WinForms3DModelViewer
 
                 foreach (var poligon in poligons)
                 {
-                    
+                    float yMax = float.MinValue;
+                    int indexMax = -1;
+                    float yMin = float.MaxValue;
+                    int indexMin = -1;
+                    float poligonColorScale;
+
+                    poligonColorScale = FindPoligonLambertComponent(poligon);
+
+
                     for (int i = 0; i < poligon.Length; i++)
                     {
                         var k = poligon[i][0] - 1;
@@ -214,11 +367,41 @@ namespace WinForms3DModelViewer
                         var X2 = (vertices[j].X);
                         var Y1 = (vertices[k].Y);
                         var Y2 = (vertices[j].Y);
+                        var Z1 = (vertices[k].Z);
+                        var Z2 = (vertices[j].Z);
+                    }
 
-                        DrawLine((int)X1, (int)Y1, (int)X2, (int)Y2, gr);
-                    };
+                    int[][] sortedPoligonVertices = new int[poligon.Length][];
+
+
+                    Array.Copy(poligon, sortedPoligonVertices, poligon.Length);
+
+                    if (vertices[sortedPoligonVertices[0][0] - 1].Y > vertices[sortedPoligonVertices[1][0] - 1].Y)
+                    {
+                        Swap(ref sortedPoligonVertices[0], ref sortedPoligonVertices[1]);
+                    }
+
+                    if (vertices[sortedPoligonVertices[0][0] - 1].Y > vertices[sortedPoligonVertices[2][0] - 1].Y)
+                    {
+                        Swap(ref sortedPoligonVertices[0], ref sortedPoligonVertices[2]);
+                    }
+
+                    if (vertices[sortedPoligonVertices[1][0] - 1].Y > vertices[sortedPoligonVertices[2][0] - 1].Y)
+                    {
+                        Swap(ref sortedPoligonVertices[1], ref sortedPoligonVertices[2]);
+                    }
+
+                    var t0 = vertices[sortedPoligonVertices[0][0] - 1];
+                    var t1 = vertices[sortedPoligonVertices[1][0] - 1];
+                    var t2 = vertices[sortedPoligonVertices[2][0] - 1];
+                    
+                    DrawTriangle(t2, t1, t0,  gr, poligonColorScale);
+                    
                 };
+                
             }
+
+            LskippedPixelsDraw.Text = skippedPixelsDraw.ToString();
 
             pictureBoxPaintArea.Image = bm;
         }
@@ -234,6 +417,113 @@ namespace WinForms3DModelViewer
             }
         }
 
+        public void TransformNormals(Matrix4x4 transformMatrix)
+        {
+            for (int i = 0; i < normalVertices.Count; i++)
+            {
+                normalVertices[i] = Vector3.Transform(normalVertices[i], transformMatrix);
+            }
+        }
+
+        private void InitializeZBuffer()
+        {
+            var width = pictureBoxPaintArea.Width + 1;
+            var height = pictureBoxPaintArea.Height + 1;
+
+            var maxZ = float.MaxValue;
+
+            zBuffer = new float[height][];
+
+            for (int i = 0; i < height; i++)
+            {
+                var arr = new float[width];
+
+                for (int j = 0; j < width; j++)
+                {
+                    arr[j] = maxZ;
+                }
+
+                zBuffer[i] = arr;
+            }
+        }
+
+        private void SortPoligonsByMinZ()
+        {
+            var poligonsZ = new List<(int num, float[] val)>(poligons.Count);
+
+            for (int i = 0; i < poligons.Count; i++)
+            {
+                var arr = new float[3];
+
+                for (var j = 0; j < poligons[i].Length; j++)
+                {
+                    arr[j] = vertices[poligons[i][j][0] - 1].Z;
+                }
+
+                poligonsZ.Add((i, arr));
+            }
+
+            poligonsZ = (List<(int num, float[] val)>)poligonsZ.OrderBy(x => x.val.Min()).ToList();
+
+            var newPoligonsList = new List<int[][]>();
+
+            for (int i = 0; i < poligons.Count; i++)
+            {
+                newPoligonsList.Add(poligons[poligonsZ[i].num]);
+            }
+
+            poligons = newPoligonsList;
+        }
+
+        private float FindPoligonLambertComponent(int[][] poligon)
+        {
+            float averageLambertComponent = 0;
+
+            for (int i = 0; i < poligon.Length; i++)
+            {
+                averageLambertComponent +=
+                    VertexColorByLambert(viewerVertices[poligon[i][0] - 1], normalVertices[poligon[i][2] - 1]);
+            }
+
+            averageLambertComponent /= poligon.Length;
+
+            return averageLambertComponent;
+        }
+
+        private float VertexColorByLambert(Vector4 vertexPosition, Vector3 vertexNormal)
+        {
+            Vector4 lightDirection = lightPoint - vertexPosition;
+            //Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) - new Vector3(vertexPosition.X, vertexPosition.Y, vertexPosition.Z);
+            Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
+
+            Vector3 N = Vector3.Normalize(vertexNormal);
+
+            float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
+
+            return lambertComponent;
+        }
+
+        private void Swap(ref int[] first, ref int[] second)
+        {
+            var temp = first;
+            first = second;
+            second = temp;
+        }
+        
+        private void Swap(ref float first, ref float second)
+        {
+            var temp = first;
+            first = second;
+            second = temp;
+        }
+
+        private void Swap(ref Vector4 first, ref Vector4 second)
+        {
+            var temp = first;
+            first = second;
+            second = temp;
+        }
+
         private void _MouseWheel(object sender, MouseEventArgs e)
         {
 
@@ -244,6 +534,7 @@ namespace WinForms3DModelViewer
 
             viewPoint.Z += (e.Delta / 700.0f);
             Transform();
+            neadDrow = true;
         }
 
         private void MainForm_ResizeEnd(object sender, EventArgs e)
@@ -282,31 +573,38 @@ namespace WinForms3DModelViewer
                     yRotation += v.X;
                     lastPoint = e.Location;//keep assigning the lastPoint to the current mouse position
                     Transform();
+                    neadDrow = true;
                 }
             }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            
             if (Keyboard.IsKeyDown(Keys.W))
             {
                 xRotation -= aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.S))
             {
                 xRotation += aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.D))
             {
                 yRotation -= aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.A))
             {
                 yRotation += aDelta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.Z))
             {
                 viewPoint.Z += delta;
+                neadDrow = true;
             };
             if (Keyboard.IsKeyDown(Keys.X))
             {
@@ -314,10 +612,15 @@ namespace WinForms3DModelViewer
                     return;
 
                 viewPoint.Z -= delta;
+                neadDrow = true;
             };
 
-            Transform();
-            Draw();
+            if (neadDrow)
+            {
+                Transform();
+                Draw();
+                neadDrow = false;
+            }
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
@@ -390,5 +693,6 @@ namespace WinForms3DModelViewer
             TransformVectors(rotateMatrix);
         }
 */
+
     }
 }
