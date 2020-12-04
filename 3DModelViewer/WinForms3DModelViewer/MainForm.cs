@@ -102,18 +102,21 @@ namespace WinForms3DModelViewer
 
             TransformVectors(projectionMatrix);
             //TransformNormals(projectionMatrix);
-
+            TransformNormals4(projectionMatrix);
+            
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
             {
                 vertices[i] /= vertices[i].W;
             }
+            
 
             projectionVertices = new List<Vector4>(vertices);
 
             removePoligons(poligons, this.viewPoint);
             
             TransformVectors(viewPortMatrix);
+            //TransformNormals(viewPortMatrix);
         }
 
         public void removePoligons(List<int[][]> poligons, Vector3 eye)
@@ -382,6 +385,21 @@ namespace WinForms3DModelViewer
             }
         }
 
+        public void TransformNormals4(Matrix4x4 transformMatrix)
+        {
+            List<Vector4> normalVertices4 = new List<Vector4>();
+            for (int i = 0; i < normalVertices.Count; i++)
+            {
+                normalVertices4.Add(Vector4.Transform(new Vector4(normalVertices[i], 1), transformMatrix));
+            }
+
+            for (int i = 0; i < normalVertices4.Count; i++)
+            {
+                normalVertices4[i] /= normalVertices4[i].W;
+                normalVertices[i] = new Vector3(normalVertices4[i].X, normalVertices4[i].Y, normalVertices4[i].Z);
+            }
+            
+        }
         private void InitializeZBuffer()
         {
             var width = pictureBoxPaintArea.Width + 1;
@@ -486,7 +504,7 @@ namespace WinForms3DModelViewer
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(-N, -L), 0);
+            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, L), 0);
             Vector3 diffuseLight = diffuseColor * lambertComponent;
 
 
@@ -494,7 +512,7 @@ namespace WinForms3DModelViewer
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
             Vector3 R = Vector3.Normalize(eyeVector);
-            Vector3 E = Vector3.Reflect(L, -N);
+            Vector3 E = Vector3.Reflect(-L, N);
 
             float specular = specularKoef * (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
             Vector3 specularLight = specularColor * specular;
