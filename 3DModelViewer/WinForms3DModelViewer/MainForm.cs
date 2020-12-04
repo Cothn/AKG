@@ -215,6 +215,29 @@ namespace WinForms3DModelViewer
             
             return viewerMatrix;
         }
+        
+        public Matrix4x4 FromViewPortCoordinates()
+        {
+            var width = pictureBoxPaintArea.Width * 3 / 4;
+            var height = pictureBoxPaintArea.Height * 3 / 4;
+
+            var xMin = pictureBoxPaintArea.Width / 8;
+            var yMin = pictureBoxPaintArea.Height / 8;
+
+            var m00 = width / 2;
+            var m11 = -height / 2;
+            var m03 = xMin + (width / 2);
+            var m13 = yMin + (height / 2);
+            var m22 = 255/2f;
+
+            var viewerMatrix = new Matrix4x4(m00, 0, 0, 0,
+                0, m11, 0, 0,
+                0, 0, 1, 0,
+                m03, m13, 0, 1);
+
+            Matrix4x4.Invert(viewerMatrix, out var koefMatrix);
+            return koefMatrix;
+        }
 
         public void DrawTriangle(int[][] poligon, Graphics bm, int pointWidth = 1, int pointHeight = 1)
         {
@@ -294,7 +317,7 @@ namespace WinForms3DModelViewer
 
                                 var pixelNormal = CountPixelNormalByVertexesAndNormals(A, B, C, pixelVector, Anormal, Bnormal, Cnormal);
 
-                                Vector3 color = VertexColorByFongo(pixelNormal);
+                                Vector3 color = VertexColorByFongo(pixelNormal, pixelVector);
 
                                 brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255), (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
 
@@ -491,7 +514,7 @@ namespace WinForms3DModelViewer
             return lambertComponent * color;
         }
 
-        private Vector3 VertexColorByFongo( Vector3 vertexNormal)
+        private Vector3 VertexColorByFongo( Vector3 vertexNormal, Vector4 vertexpixel4)
         {
             var ambientLightColor = new Vector3(25F, 15F, 25F);
             var diffuzeKoef = 1;
@@ -499,12 +522,17 @@ namespace WinForms3DModelViewer
             var diffuseColor = new Vector3(12F, 108F, 1F);
             var specularColor = new Vector3(120F, 120F, 120F);
 
-            Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) ;
+            var matrix = FromViewPortCoordinates();
+            var vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
+            vertexpixel =  Vector3.Normalize(Vector3.Transform(vertexpixel, matrix));
+            
+
+            Vector3 lightDirection = Vector3.Normalize( new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z)) - vertexpixel;
 
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, L), 0);
+            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, -L), 0);
             Vector3 diffuseLight = diffuseColor * lambertComponent;
 
 
@@ -512,7 +540,7 @@ namespace WinForms3DModelViewer
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
             Vector3 R = Vector3.Normalize(eyeVector);
-            Vector3 E = Vector3.Reflect(-L, N);
+            Vector3 E = Vector3.Reflect(L, N);
 
             float specular = specularKoef * (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
             Vector3 specularLight = specularColor * specular;
