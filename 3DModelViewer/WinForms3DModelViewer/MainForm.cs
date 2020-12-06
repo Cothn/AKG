@@ -34,13 +34,14 @@ namespace WinForms3DModelViewer
         bool isMouseDown = false;
         bool neadDrow = true;
 
-        Vector3 viewPoint = new Vector3(0, 0, 4);
+        Vector3 viewPoint = new Vector3(0, 0, 2);
         Vector3 eyePoint;
 
         float delta = 0.1f;
         float aDelta = 1f;
-
-        Vector4 origlightPoint = new Vector4(5, 0, -5, 1);
+        float lDelta = 0.02f;
+            ///0.0000001f
+        Vector4 origlightPoint = new Vector4(-1.08f, -1.26f, 0.96f, 1);
         Vector4 lightPoint;
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
@@ -368,7 +369,7 @@ namespace WinForms3DModelViewer
             var bm = new Bitmap(width, height);
             using (var gr = Graphics.FromImage(bm))
             {
-                gr.Clear(Color.Black);
+                gr.Clear(Color.WhiteSmoke);
 
                 foreach (var poligon in poligons)
                 {
@@ -397,7 +398,7 @@ namespace WinForms3DModelViewer
                 
             }
 
-            LskippedPixelsDraw.Text = skippedPixelsDraw.ToString();
+            //LskippedPixelsDraw.Text = skippedPixelsDraw.ToString();
 
             pictureBoxPaintArea.Image = bm;
         }
@@ -529,16 +530,17 @@ namespace WinForms3DModelViewer
 
         private Vector3 VertexColorByFongo( Vector3 vertexNormal, Vector4 vertexpixel4)
         {
-            var ambientLightColor = new Vector3(25F, 15F, 25F);
-            var diffuzeKoef = 1;
-            var specularKoef = 1;
-            var diffuseColor = new Vector3(12F, 128F, 1F);
-            var specularColor = new Vector3(255F, 255F, 255F);
-
             var matrix = FromViewPortCoordinates();
             var vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
             vertexpixel =  Vector3.Transform(vertexpixel, matrix);
             
+            var ambientLightColor = new Vector3(25F, 15F, 25F);
+            var diffuzeKoef = 1;
+            var specularKoef = 1;
+            vertexpixel = new Vector3(0, 0, 0);
+            var diffuseColor = new Vector3(12F, 128F, 1F);
+            var specularColor = new Vector3(255F, 255F, 255F);
+
 
             Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) - vertexpixel;
 
@@ -715,7 +717,51 @@ namespace WinForms3DModelViewer
                 viewPoint.Z -= delta;
                 neadDrow = true;
             };
+            
+            if (Keyboard.IsKeyDown(Keys.U))
+            {
+                origlightPoint.Y  -= lDelta;
+                neadDrow = true;
+            };
+            if (Keyboard.IsKeyDown(Keys.J))
+            {
+                origlightPoint.Y  += lDelta;
+                neadDrow = true;
+            };
+            if (Keyboard.IsKeyDown(Keys.H))
+            {
+                origlightPoint.X -= lDelta;
+                neadDrow = true;
+            };
+            if (Keyboard.IsKeyDown(Keys.K))
+            {
+                origlightPoint.X += lDelta;
+                neadDrow = true;
+            };
+            if (Keyboard.IsKeyDown(Keys.N))
+            {
+                origlightPoint.Z += lDelta;
+                neadDrow = true;
+            };
+            if (Keyboard.IsKeyDown(Keys.M))
+            {
+                if (origlightPoint.Z - lDelta < 0)
+                    return;
 
+                origlightPoint.Z -= lDelta;
+                neadDrow = true;
+            };
+            if (Keyboard.IsKeyDown(Keys.O))
+            {
+
+                lDelta *= 2;
+            };
+            if (Keyboard.IsKeyDown(Keys.L))
+            {
+                lDelta /= 2;
+            };
+            LskippedPixelsDraw.Text = "d=" + lDelta + " x="+ origlightPoint.X + " y="+ origlightPoint.Y + " z="+ origlightPoint.Z;
+            
             if (neadDrow)
             {
                 Transform();
