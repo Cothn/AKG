@@ -40,8 +40,8 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
-        Vector4 origlightPoint = new Vector4(-5, 0, 3, 1);
-        Vector4 lightPoint = new Vector4(10, 11, 2, 1);
+        Vector4 origlightPoint = new Vector4(5, 0, -5, 1);
+        Vector4 lightPoint;
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
@@ -96,10 +96,13 @@ namespace WinForms3DModelViewer
 
             var mainMatrix = viewerMatrix * projectionMatrix;
 
+            eye = eyePoint;
+            //lightPoint = new Vector4(eye.X+5, eye.Y, eye.Z +1, 1);
             lightPoint = origlightPoint;
             //lightPoint  =  Vector4.Transform(lightPoint , viewerMatrix );
-            //lightPoint  =  Vector4.Transform(lightPoint , projectionMatrix);
             //lightPoint /= lightPoint.W;
+            lightPoint  =  Vector4.Transform(lightPoint , projectionMatrix);
+            lightPoint /= lightPoint.W;
 
             TransformVectors(viewerMatrix);
             TransformNormals(viewerMatrix);
@@ -506,7 +509,7 @@ namespace WinForms3DModelViewer
 
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = Math.Max(Vector3.Dot(N, -L), 0);
+            float lambertComponent = Math.Max(Vector3.Dot(N, L), 0);
 
             return lambertComponent;
         }
@@ -527,48 +530,45 @@ namespace WinForms3DModelViewer
         private Vector3 VertexColorByFongo( Vector3 vertexNormal, Vector4 vertexpixel4)
         {
             var ambientLightColor = new Vector3(25F, 15F, 25F);
-            var diffuzeKoef = 0.8;
-            var specularKoef = 2;
-            var diffuseColor = new Vector3(12F, 108F, 1F);
-            var specularColor = new Vector3(120F, 120F, 120F);
+            var diffuzeKoef = 1;
+            var specularKoef = 1;
+            var diffuseColor = new Vector3(12F, 128F, 1F);
+            var specularColor = new Vector3(255F, 255F, 255F);
 
             var matrix = FromViewPortCoordinates();
             var vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
             vertexpixel =  Vector3.Transform(vertexpixel, matrix);
             
 
-            Vector3 lightDirection = Vector3.Normalize( new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z)) - vertexpixel;
+            Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) - vertexpixel;
 
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, -L), 0);
+            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, L), 0);
             Vector3 diffuseLight = diffuseColor * lambertComponent;
 
 
-            Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z);
+            Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexpixel;
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
-            Vector3 R = Vector3.Normalize(eyeVector);
-            Vector3 E = Vector3.Reflect(L, N);
+            Vector3 E = Vector3.Normalize(eyeVector);
+            Vector3 R = Vector3.Reflect(-L, N);
 
-            float specular = specularKoef * (float)Math.Pow(Math.Max(Vector3.Dot(E, R), 0), shiness);
+            float specular = specularKoef * (float)Math.Pow(Math.Max(Vector3.Dot(R, E), 0), shiness);
             Vector3 specularLight = specularColor * specular;
 
             Vector3 sumColor = ambientLightColor;
             sumColor += diffuseLight;
             sumColor += specularLight;
 
+            sumColor = new Vector3(Math.Min(sumColor.X, 255), Math.Min(sumColor.Y, 255), Math.Min(sumColor.Z, 255));
             return sumColor;
         }
 
         private Vector3 CountPixelNormalByVertexesAndNormals(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
         {
-            var matrix = FromViewPortCoordinates();
-            a1=  Vector4.Transform(a1, matrix);
-            a2=  Vector4.Transform(a2, matrix);
-            a3=  Vector4.Transform(a3, matrix);
-            b=  Vector4.Transform(b, matrix);
+
             
             var koeffs = CountSystemOfEquations(a1, a2, a3, b);
 
@@ -581,8 +581,14 @@ namespace WinForms3DModelViewer
             return normal;
         }
 
-        private Vector3 CountSystemOfEquations(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b)
+        private Vector3 CountSystemOfEquations(Vector4 a14, Vector4 a24, Vector4 a34, Vector4 b4)
         {
+            
+            var matrix = FromViewPortCoordinates();
+            var a1=  Vector3.Transform(new Vector3(a14.X, a14.Y, a14.Z), matrix);
+            var a2=  Vector3.Transform(new Vector3(a24.X, a24.Y, a24.Z), matrix);
+            var a3=  Vector3.Transform(new Vector3(a34.X, a34.Y, a34.Z), matrix);
+            var b=  Vector3.Transform(new Vector3(b4.X, b4.Y, b4.Z), matrix);
 
             var nKoefMatrix = new Matrix4x4(a1.X, a2.X, a3.X, 0,
                 a1.Y, a2.Y, a3.Y, 0,
@@ -723,71 +729,7 @@ namespace WinForms3DModelViewer
 
         }
         
-        /*
-        public Matrix4x4 ScaleVectors(float x)
-        {
-            var scaleMatrix = new Matrix4x4(x, 0, 0, 0,
-                                            0, x, 0, 0,
-                                            0, 0, x, 0,
-                                            0, 0, 0, 1);
 
-            TransformVectors(scaleMatrix);
-
-            return scaleMatrix;
-        }
-
-        public void MoveVectors(Vector3 vector)
-        {
-            var translationMatrix = new Matrix4x4(1, 0, 0, 0,
-                                                  0, 1, 0, 0,
-                                                  0, 0, 1, 0,
-                                                  vector.X, vector.Y, vector.Z, 1);
-
-            TransformVectors(translationMatrix);
-        }
-
-        public void RotateXVectors(float degrees)
-        {
-            double angle = Math.PI * degrees / 180.0;
-            var sin = (float)Math.Sin(angle);
-            var cos = (float)Math.Cos(angle);
-
-            var rotateMatrix = new Matrix4x4(1, 0, 0, 0,
-                                             0, cos, sin, 0,
-                                             0, -sin, cos, 0,
-                                             0, 0, 0, 1);
-
-            TransformVectors(rotateMatrix);
-        }
-
-        public void RotateYVectors(float degrees)
-        {
-            double angle = Math.PI * degrees / 180.0;
-            var sin = (float)Math.Sin(angle);
-            var cos = (float)Math.Cos(angle);
-
-            var rotateMatrix = new Matrix4x4(cos, 0, -sin, 0,
-                                               0, 1, 0, 0,
-                                             sin, 0, cos, 0,
-                                               0, 0, 0, 1);
-
-            TransformVectors(rotateMatrix);
-        }
-
-        public void RotateZVectors(float degrees)
-        {
-            double angle = Math.PI * degrees / 180.0;
-            var sin = (float)Math.Sin(angle);
-            var cos = (float)Math.Cos(angle);
-
-            var rotateMatrix = new Matrix4x4(cos, sin, 0, 0,
-                                             -sin, cos, 0, 0,
-                                              0, 0, 1, 0,
-                                              0, 0, 0, 1);
-
-            TransformVectors(rotateMatrix);
-        }
-*/
 
     }
 }
