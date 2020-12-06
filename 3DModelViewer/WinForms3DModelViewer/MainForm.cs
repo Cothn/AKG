@@ -40,7 +40,8 @@ namespace WinForms3DModelViewer
         float delta = 0.1f;
         float aDelta = 1f;
 
-        Vector4 lightPoint = new Vector4(10, 11, 2, 0);
+        Vector4 origlightPoint = new Vector4(-5, 0, 3, 1);
+        Vector4 lightPoint = new Vector4(10, 11, 2, 1);
         private List<Vector4> worldVertices;
         private List<Vector4> viewerVertices;
         private List<Vector4> projectionVertices;
@@ -95,14 +96,23 @@ namespace WinForms3DModelViewer
 
             var mainMatrix = viewerMatrix * projectionMatrix;
 
+            lightPoint = origlightPoint;
+            //lightPoint  =  Vector4.Transform(lightPoint , viewerMatrix );
+            //lightPoint  =  Vector4.Transform(lightPoint , projectionMatrix);
+            //lightPoint /= lightPoint.W;
+
             TransformVectors(viewerMatrix);
             TransformNormals(viewerMatrix);
+            
+            
 
             viewerVertices = new List<Vector4>(vertices);
 
             TransformVectors(projectionMatrix);
             //TransformNormals(projectionMatrix);
             TransformNormals4(projectionMatrix);
+            
+            
             
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
@@ -309,7 +319,7 @@ namespace WinForms3DModelViewer
                             {
                                 zBuffer[(int) y][(int) x] = z;
 
-                                Vector4 pixelVector = new Vector4(x, y, z, 0);
+                                Vector4 pixelVector = new Vector4(x, y, z, 1);
 
                                 var Anormal = normalVertices[sortedPoligonVertices[2][2] - 1];
                                 var Bnormal = normalVertices[sortedPoligonVertices[1][2] - 1];
@@ -517,14 +527,14 @@ namespace WinForms3DModelViewer
         private Vector3 VertexColorByFongo( Vector3 vertexNormal, Vector4 vertexpixel4)
         {
             var ambientLightColor = new Vector3(25F, 15F, 25F);
-            var diffuzeKoef = 1;
+            var diffuzeKoef = 0.8;
             var specularKoef = 2;
             var diffuseColor = new Vector3(12F, 108F, 1F);
             var specularColor = new Vector3(120F, 120F, 120F);
 
             var matrix = FromViewPortCoordinates();
             var vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
-            vertexpixel =  Vector3.Normalize(Vector3.Transform(vertexpixel, matrix));
+            vertexpixel =  Vector3.Transform(vertexpixel, matrix);
             
 
             Vector3 lightDirection = Vector3.Normalize( new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z)) - vertexpixel;
@@ -554,9 +564,19 @@ namespace WinForms3DModelViewer
 
         private Vector3 CountPixelNormalByVertexesAndNormals(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
         {
+            var matrix = FromViewPortCoordinates();
+            a1=  Vector4.Transform(a1, matrix);
+            a2=  Vector4.Transform(a2, matrix);
+            a3=  Vector4.Transform(a3, matrix);
+            b=  Vector4.Transform(b, matrix);
+            
             var koeffs = CountSystemOfEquations(a1, a2, a3, b);
 
             var normal = koeffs.X * n1 + koeffs .Y * n2 + koeffs .Z * n3;
+            
+            //var matrix = FromViewPortCoordinates();
+            //var vertexpixel = normal;
+            //normal =  Vector3.Transform(normal, matrix);
 
             return normal;
         }
