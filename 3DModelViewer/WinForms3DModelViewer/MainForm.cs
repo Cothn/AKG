@@ -15,7 +15,7 @@ namespace WinForms3DModelViewer
     public partial class MainForm : Form
     {
         //private const string FilesPath = @"D:\Github projects\AKG\Head\";
-        private const string FilesPath = @"D:\RepositHub\AKG\Head\";
+        private const string FilesPath = @"D:\RepositHub\AKG\Board\";
 
         private List<string> filesNames = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
 
@@ -62,8 +62,8 @@ namespace WinForms3DModelViewer
         private Bitmap specularMap;
 
         public bool isAlbedoMap = true;
-        public bool isNormalMap = true;
-        public bool isSpecularMap = true;
+        public bool isNormalMap = false;
+        public bool isSpecularMap = false;
 
         public Matrix4x4 toViewerCoord;
         public Matrix4x4 toProjectionCoord;
@@ -378,6 +378,7 @@ namespace WinForms3DModelViewer
                                     Ctexture = textureVertices[sortedPoligonVertices[0][1] - 1];
 
                                     pixelTextureKoef = LinearInterpolation(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
+                                        //LinearInterpolation(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
                                 }
 
 
@@ -392,7 +393,7 @@ namespace WinForms3DModelViewer
                                         ? 0
                                         : (pixelTexture.X >= albedoMap.Width ? albedoMap.Width - 1 : pixelTexture.X);
 
-                                    pixelTexture.Y = pixelTexture.Y < 0
+                                    pixelTexture.Y = pixelTexture.Y < 1
                                         ? 1
                                         : (pixelTexture.Y >= albedoMap.Height ? albedoMap.Height : pixelTexture.Y);
 
@@ -414,7 +415,7 @@ namespace WinForms3DModelViewer
                                         ? 0
                                         : (pixelTexture.X >= normalMap.Width ? normalMap.Width - 1 : pixelTexture.X);
 
-                                    pixelTexture.Y = pixelTexture.Y < 0
+                                    pixelTexture.Y = pixelTexture.Y < 1
                                         ? 1
                                         : (pixelTexture.Y >= normalMap.Height ? normalMap.Height : pixelTexture.Y);
 
@@ -462,7 +463,7 @@ namespace WinForms3DModelViewer
                                         ? 0
                                         : (pixelTexture.X >= specularMap.Width ? specularMap.Width - 1 : pixelTexture.X);
 
-                                    pixelTexture.Y = pixelTexture.Y < 0
+                                    pixelTexture.Y = pixelTexture.Y < 1
                                         ? 1
                                         : (pixelTexture.Y >= specularMap.Height ? specularMap.Height : pixelTexture.Y);
 
@@ -734,6 +735,8 @@ namespace WinForms3DModelViewer
             sumColor = new Vector3(Math.Min(sumColor.X, 255), Math.Min(sumColor.Y, 255), Math.Min(sumColor.Z, 255));
             return sumColor;
         }
+        
+
 
         private Vector3 LinearInterpolation(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
         {
