@@ -33,3 +33,6 @@ Head/*
 *.exe
 *.out
 *.app
+3DModelViewer/WinForms3DModelViewer/obj/Debug/WinForms3DModelViewer.pdb
+3DModelViewer/WinForms3DModelViewer/bin/Debug/WinForms3DModelViewer.pdb
+3DModelViewer/WinForms3DModelViewer/obj/Debug/WinForms3DModelViewer.pdb
