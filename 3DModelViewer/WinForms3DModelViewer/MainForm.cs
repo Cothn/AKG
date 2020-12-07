@@ -66,6 +66,7 @@ namespace WinForms3DModelViewer
         public bool isSpecularMap = true;
 
         public Matrix4x4 toViewerCoord;
+        public Matrix4x4 toProjectionCoord;
 
         public MainForm()
         {
@@ -128,7 +129,7 @@ namespace WinForms3DModelViewer
 
 
             var projectionMatrix = ToProjectionCoordinates();
-
+            toProjectionCoord = projectionMatrix;
             var viewPortMatrix = ToViewPortCoordinates();
 
             var mainMatrix = viewerMatrix * projectionMatrix;
@@ -380,7 +381,7 @@ namespace WinForms3DModelViewer
                                 }
 
 
-                                Vector3 diffuseAndAmbientKoef = new Vector3(0, 0, 0);
+                                Vector3 diffuseAndAmbientKoef = new Vector3(5, 5, 5);
 
                                 if (isAlbedoMap)
                                 {
@@ -435,6 +436,8 @@ namespace WinForms3DModelViewer
                                     pixelNormal = Vector3.Normalize(pixelNormal);
 
                                     pixelNormal = Vector3.Transform(pixelNormal, toViewerCoord);
+                                    
+                                    pixelNormal = Vector3.Transform(pixelNormal, toProjectionCoord);
 
                                     //pixelNormal.X = pixelNormal.X * 2 - 1;
                                     //pixelNormal.Y = pixelNormal.Y * 2 - 1;
@@ -448,7 +451,7 @@ namespace WinForms3DModelViewer
                                 }
 
 
-                                Vector3 specularKoef = new Vector3(0,0,0);
+                                Vector3 specularKoef = new Vector3(1,1,1);
 
                                 if (isSpecularMap)
                                 {
@@ -470,7 +473,7 @@ namespace WinForms3DModelViewer
                                 }
 
 
-                                Vector3 color = VertexColorByFongo(pixelNormal, diffuseAndAmbientKoef, diffuseAndAmbientKoef, specularKoef);
+                                Vector3 color = VertexColorByFongo(pixelNormal, pixelVector, diffuseAndAmbientKoef, diffuseAndAmbientKoef, specularKoef);
 
                                 brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255), (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
 
@@ -508,8 +511,9 @@ namespace WinForms3DModelViewer
             var bm = new Bitmap(width, height);
             using (var gr = Graphics.FromImage(bm))
             {
-                gr.Clear(Color.WhiteSmoke);
-
+                //gr.Clear(Color.WhiteSmoke);
+                gr.Clear(Color.Black);
+                
                 foreach (var poligon in poligons)
                 {
                     float yMax = float.MinValue;
@@ -674,12 +678,23 @@ namespace WinForms3DModelViewer
             vertexpixel =  Vector3.Transform(vertexpixel, matrix);
 
             var ambientLightColor = new Vector3(3F, 1F, 3F) * (ambientKoef / 20f);
+            
+            var diffuzeKoefL = 4f;
+            if (isAlbedoMap)
+            {
+                diffuzeKoefL = 0.5f;
+            }
 
-            var diffuzeKoefL = 1;
-            var specularKoefL = 1;
+            var specularKoefL = 2.2f;
+            if (isSpecularMap)
+            {
+                specularKoefL = 0.12f;
+            }
             vertexpixel = new Vector3(0, 0, 0);
-            var diffuseColor = new Vector3(30F, 40F, 15F);
-            var specularColor = new Vector3(120F, 120F, 120F);
+            //var diffuseColor = new Vector3(12F, 128F, 1F);
+
+            var diffuseColor = new Vector3(30F, 30F, 25F);
+            var specularColor = new Vector3(255F, 255F, 255F);
 
             //var ambientLightColor = ambientKoef;
             //var diffuseColor = new Vector3(30F, 30F, 30F);
@@ -699,8 +714,8 @@ namespace WinForms3DModelViewer
 
             Vector3 diffuseLight = (diffuseKoef / 10f) * diffuseColor * lambertComponent;
 
-            //vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
-            //vertexpixel =  Vector3.Transform(vertexpixel, matrix);
+            vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
+            vertexpixel =  Vector3.Transform(vertexpixel, matrix);
             //vertexpixel = new Vector3(0, 0, 0);
             Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexpixel;
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
