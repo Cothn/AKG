@@ -64,6 +64,7 @@ namespace WinForms3DModelViewer
             ObjParser parser = new ObjParser();
             (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
                 = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+                //parser.Parse(@"D:\RepositHub\AKG\moon.obj");
             //parser.Parse(@"D:\Github projects\AKG\Head\Model.obj");
             //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
             Transform();
@@ -542,15 +543,24 @@ namespace WinForms3DModelViewer
             var specularColor = new Vector3(255F, 255F, 255F);
 
 
+
             Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) - vertexpixel;
+            // lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z);
 
             Vector3 L = Vector3.Normalize(new Vector3(lightDirection.X, lightDirection.Y, lightDirection.Z));
+            //if (lightPoint.Z < 0)
+            //{
+            //    L = -L;
+            //}
             Vector3 N = Vector3.Normalize(vertexNormal);
 
             float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, L), 0);
             Vector3 diffuseLight = diffuseColor * lambertComponent;
 
 
+            //vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
+            //vertexpixel =  Vector3.Transform(vertexpixel, matrix);
+            //vertexpixel = new Vector3(0, 0, 0);
             Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexpixel;
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
@@ -683,85 +693,116 @@ namespace WinForms3DModelViewer
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            
-            if (Keyboard.IsKeyDown(Keys.W))
+            if (this.Focused)
             {
-                xRotation -= aDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.S))
-            {
-                xRotation += aDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.D))
-            {
-                yRotation -= aDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.A))
-            {
-                yRotation += aDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.Z))
-            {
-                viewPoint.Z += delta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.X))
-            {
-                if (viewPoint.Z - delta < 0)
-                    return;
+                if (Keyboard.IsKeyDown(Keys.W))
+                {
+                    xRotation -= aDelta;
+                    neadDrow = true;
+                }
 
-                viewPoint.Z -= delta;
-                neadDrow = true;
-            };
-            
-            if (Keyboard.IsKeyDown(Keys.U))
-            {
-                origlightPoint.Y  -= lDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.J))
-            {
-                origlightPoint.Y  += lDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.H))
-            {
-                origlightPoint.X -= lDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.K))
-            {
-                origlightPoint.X += lDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.N))
-            {
-                origlightPoint.Z += lDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.M))
-            {
-                if (origlightPoint.Z - lDelta < 0)
-                    return;
+                ;
+                if (Keyboard.IsKeyDown(Keys.S))
+                {
+                    xRotation += aDelta;
+                    neadDrow = true;
+                }
 
-                origlightPoint.Z -= lDelta;
-                neadDrow = true;
-            };
-            if (Keyboard.IsKeyDown(Keys.O))
-            {
+                ;
+                if (Keyboard.IsKeyDown(Keys.D))
+                {
+                    yRotation -= aDelta;
+                    neadDrow = true;
+                }
 
-                lDelta *= 2;
-            };
-            if (Keyboard.IsKeyDown(Keys.L))
-            {
-                lDelta /= 2;
-            };
-            LskippedPixelsDraw.Text = "d=" + lDelta + " x="+ origlightPoint.X + " y="+ origlightPoint.Y + " z="+ origlightPoint.Z;
-            
+                ;
+                if (Keyboard.IsKeyDown(Keys.A))
+                {
+                    yRotation += aDelta;
+                    neadDrow = true;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.Z))
+                {
+                    viewPoint.Z += delta;
+                    neadDrow = true;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.X))
+                {
+                    if (viewPoint.Z - delta < 0)
+                        return;
+
+                    viewPoint.Z -= delta;
+                    neadDrow = true;
+                }
+
+                ;
+
+                if (Keyboard.IsKeyDown(Keys.U))
+                {
+                    origlightPoint.Y -= lDelta;
+                    neadDrow = true;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.J))
+                {
+                    origlightPoint.Y += lDelta;
+                    neadDrow = true;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.H))
+                {
+                    origlightPoint.X -= lDelta;
+                    neadDrow = true;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.K))
+                {
+                    origlightPoint.X += lDelta;
+                    neadDrow = true;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.N))
+                {
+                    origlightPoint.Z += lDelta;
+                    neadDrow = true;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.M))
+                {
+                    if (origlightPoint.Z - lDelta < 0)
+                        return;
+
+                    origlightPoint.Z -= lDelta;
+                    neadDrow = true;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.O))
+                {
+
+                    lDelta += 0.02f;
+                }
+
+                ;
+                if (Keyboard.IsKeyDown(Keys.L))
+                {
+                    lDelta -= 0.02f;
+                }
+
+                ;
+                LskippedPixelsDraw.Text = "d=" + lDelta;
+                //LskippedPixelsDraw.Text +=" x="+ origlightPoint.X + " y="+ origlightPoint.Y + " z="+ origlightPoint.Z;
+            }
+
             if (neadDrow)
             {
                 Transform();
