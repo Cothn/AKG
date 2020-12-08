@@ -32,6 +32,7 @@ namespace WinForms3DModelViewer
         private List<int[][]> originalPoligons;
         private List<int[][]> poligons;
 
+        public float[] Wbuf;
         private float[][] zBuffer;
 
         Point lastPoint = Point.Empty;
@@ -152,13 +153,14 @@ namespace WinForms3DModelViewer
             TransformVectors(projectionMatrix);
             //TransformNormals(projectionMatrix);
             TransformNormals4(projectionMatrix);
-            
-            
-            
+
+
+            Wbuf = new float[vertices.Count];
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
             {
-                vertices[i] /= vertices[i].W;
+                Wbuf[i] = vertices[i].W;
+                vertices[i] /=  vertices[i].W;
             }
             
 
@@ -376,9 +378,31 @@ namespace WinForms3DModelViewer
                                     Atexture = textureVertices[sortedPoligonVertices[2][1] - 1];
                                     Btexture = textureVertices[sortedPoligonVertices[1][1] - 1];
                                     Ctexture = textureVertices[sortedPoligonVertices[0][1] - 1];
-
+                                    A.W = Wbuf[sortedPoligonVertices[2][0] - 1];
+                                    B.W = Wbuf[sortedPoligonVertices[1][0] - 1];
+                                    C.W = Wbuf[sortedPoligonVertices[0][0] - 1];
+                                    
+                                    Atexture /= A.W;
+                                    Atexture.Z = 1/A.W;
+                                    Btexture /= B.W;
+                                    Btexture.Z = 1/B.W;
+                                    Ctexture /= C.Z;
+                                    Ctexture.Z = 1/C.W;
+                                    
                                     pixelTextureKoef = LinearInterpolation(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
-                                        //LinearInterpolation(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
+                                    //var baricentrikCoord = CountSystemOfEquations(A, B, C, pixelVector);
+                                    pixelTextureKoef /= pixelTextureKoef.Z;
+
+                                    //pixelTextureKoef.X =
+                                    //    (Atexture.X / A.Z* baricentrikCoord.X + Btexture.X / B.Z* baricentrikCoord.Y + Ctexture.X / C.Z* baricentrikCoord.Z) 
+                                    //    ;
+                                    //pixelTextureKoef.Y =
+                                    //    (Atexture.Y / A.Z* baricentrikCoord.X + Btexture.Y / B.Z* baricentrikCoord.Y + Ctexture.Y / C.Z* baricentrikCoord.Z);
+                                    //pixelTextureKoef.Z =
+                                    //    (baricentrikCoord.X / A.Z + baricentrikCoord.Y / B.Z + baricentrikCoord.Z  / C.Z) ;
+                                    //pixelTextureKoef.X /= pixelTextureKoef.Z;
+                                    //pixelTextureKoef.Y /= pixelTextureKoef.Z;
+                                    //pixelTextureKoef = LinearInterpolationT(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
                                 }
 
 
@@ -736,6 +760,99 @@ namespace WinForms3DModelViewer
             return sumColor;
         }
         
+        private Vector3 LinearInterpolationT(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 t1, Vector3 t2, Vector3 t3)
+        {
+            float startX, startZ;
+            //float Sb1, b1E;
+            float u1, v1;
+            t1.X = t1.X / a1.Z;
+            t1.Y = t1.Y / a1.Z;
+            t1.Z = 1/ a1.Z;
+            t2.X = t2.X / a2.Z;
+            t2.Y = t2.Y / a2.Z;
+            t2.Z = 1/ a2.Z;
+            t3.X = t3.X / a3.Z;
+            t3.Y = t3.Y / a3.Z;
+            t3.Z = 1/ a3.Z;
+            if (b.Y >= a2.Y)
+            {
+                var BAK = (b.Y - a2.Y) / (a1.Y - b.Y);
+                startX = (a2.X + a1.X * BAK) / (BAK + 1);
+                var edge2 =  getLineLength(a1, a2);
+                var Sb1 = getLineLength(a1, new Vector4(startX, b.Y, 0, 0)) / edge2;
+                var b1E = getLineLength(a2, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                //var b1E = getLineLength(a1, new Vector4(startX, b.Y, 0, 0)) / edge2;
+                //var Sb1 = getLineLength(a2, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                
+                startZ = (a2.Z + a1.Z * BAK) / (BAK + 1);
+                //u1 = (t1.X*b1E + t2.X*Sb1) / (t1.Z*b1E + t2.Z*Sb1);
+                //v1 = (t1.Y*b1E + t2.Y*Sb1) / (t1.Z*b1E + t2.Z*Sb1);
+                u1 = (t1.X*b1E + t2.X*Sb1) * startZ;
+                v1 = (t1.Y*b1E + t2.Y*Sb1) * startZ;
+
+            }
+            else
+            {
+                var CBK = (b.Y - a3.Y) / (a2.Y - b.Y);
+                startX = (a3.X + a2.X * CBK) / (CBK + 1);
+                var edge2 =  getLineLength(a2, a3);
+                var Sb1 = getLineLength(a2, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                var b1E = getLineLength(a3, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                //var b1E = getLineLength(a2, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                //var Sb1 = getLineLength(a3, new Vector4(startX, b.Y, 0, 0))/ edge2;
+               // u1 = (t2.X*b1E + t3.X*Sb1) / (t2.Z*b1E + t3.Z*Sb1);
+                //v1 = (t2.Y*b1E + t3.Y*Sb1) / (t2.Z*b1E + t3.Z*Sb1);
+                startZ = (a3.Z + a2.Z * CBK) / (CBK + 1);
+                u1 = (t2.X*b1E + t3.X*Sb1) * startZ;
+                v1 = (t2.Y*b1E + t3.Y*Sb1) * startZ;
+
+            }
+            
+            var CAK = (b.Y - a3.Y) / (a1.Y - b.Y);
+            var endX = (a3.X + a1.X * CAK) / (CAK + 1);
+            var endZ = (a3.Z + a1.Z * CAK) / (CAK + 1);
+            
+            
+            var edge1 = getLineLength(a1, a3);
+            var Sb0 = getLineLength(a1, new Vector4(endX, b.Y, 0, 0))/edge1;
+            var b0E = getLineLength(a3, new Vector4(endX, b.Y, 0, 0))/edge1;
+            //var b0E = getLineLength(a1, new Vector4(endX, b.Y, 0, 0))/edge1;
+            //var Sb0 = getLineLength(a3, new Vector4(endX, b.Y, 0, 0))/edge1;
+            var u0 = (t1.X*b0E + t3.X*Sb0) / (t1.Z*b0E + t3.Z*Sb0);
+            var v0 = (t1.Y*b0E + t3.Y*Sb0) / (t1.Z*b0E + t3.Z*Sb0);
+
+            var edge0 = getLineLength(new Vector4(startX, b.Y, 0, 0), new Vector4(endX, b.Y, 0, 0));
+            var Sb = getLineLength(new Vector4(startX, b.Y, 0, 0), b) / edge0;
+            var bE = getLineLength(new Vector4(endX, b.Y, 0, 0), b) / edge0;
+            //var bE = getLineLength(new Vector4(startX, b.Y, 0, 0), b) / edge0;
+            //var Sb = getLineLength(new Vector4(endX, b.Y, 0, 0), b) / edge0;
+
+           /* u0 = u0 / endZ;
+            v0 = v0 / endZ;
+            u1 = u1 /startZ;
+            v1 = v1 / startZ;
+            startZ = 1 / startZ;
+            endZ = 1 / endZ;
+            */
+            var u = (u1*bE + u0*Sb) ;/// (startZ*bE + endZ*Sb);
+            var v = (v1*bE + v0*Sb) ;/// (startZ*bE + endZ*Sb);
+            
+
+            //var koeffs = CountSystemOfEquations(a1, a2, a3, b);
+
+            //var normal = koeffs.X * n1 + koeffs .Y * n2 + koeffs .Z * n3;
+            
+            //var matrix = FromViewPortCoordinates();
+            //var vertexpixel = normal;
+            //normal =  Vector3.Transform(normal, matrix);
+
+            return new Vector3(u, v, 0);
+        }
+
+        private float getLineLength(Vector4 a1, Vector4 a2)
+        {
+            return (float) Math.Sqrt((a2.X - a1.X) * (a2.X - a1.X) + (a2.Y - a1.Y) * (a2.Y - a1.Y));
+        }
 
 
         private Vector3 LinearInterpolation(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
@@ -745,6 +862,21 @@ namespace WinForms3DModelViewer
             var koeffs = CountSystemOfEquations(a1, a2, a3, b);
 
             var normal = koeffs.X * n1 + koeffs .Y * n2 + koeffs .Z * n3;
+            
+            //var matrix = FromViewPortCoordinates();
+            //var vertexpixel = normal;
+            //normal =  Vector3.Transform(normal, matrix);
+
+            return normal;
+        }
+        
+        private Vector3 LinearInterpolationD(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
+        {
+
+            
+            var koeffs = CountSystemOfEquations(a1, a2, a3, b);
+
+            var normal = n1/koeffs.X + n2/koeffs .Y + n3/koeffs .Z;
             
             //var matrix = FromViewPortCoordinates();
             //var vertexpixel = normal;
@@ -857,14 +989,14 @@ namespace WinForms3DModelViewer
             {
                 if (Keyboard.IsKeyDown(Keys.W))
                 {
-                    xRotation -= aDelta;
+                    xRotation -= lDelta;
                     neadDrow = true;
                 }
 
                 ;
                 if (Keyboard.IsKeyDown(Keys.S))
                 {
-                    xRotation += aDelta;
+                    xRotation += lDelta;
                     neadDrow = true;
                 }
 
