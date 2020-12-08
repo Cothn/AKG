@@ -386,7 +386,7 @@ namespace WinForms3DModelViewer
                                     Atexture.Z = 1/A.W;
                                     Btexture /= B.W;
                                     Btexture.Z = 1/B.W;
-                                    Ctexture /= C.Z;
+                                    Ctexture /= C.W;
                                     Ctexture.Z = 1/C.W;
                                     
                                     pixelTextureKoef = LinearInterpolation(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
