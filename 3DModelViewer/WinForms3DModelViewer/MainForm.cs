@@ -14,7 +14,11 @@ namespace WinForms3DModelViewer
 {
     public partial class MainForm : Form
     {
-        
+        //private const string FilesPath = @"D:\Github projects\AKG\Head\";
+        private const string FilesPath = @"D:\RepositHub\AKG\Head\";
+
+        private List<string> filesNames = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
+
         readonly Vector3 defaultColor = new Vector3(255, 255, 255);
         readonly float shiness = 30;
 
@@ -28,6 +32,7 @@ namespace WinForms3DModelViewer
         private List<int[][]> originalPoligons;
         private List<int[][]> poligons;
 
+        public float[] Wbuf;
         private float[][] zBuffer;
 
         Point lastPoint = Point.Empty;
@@ -53,6 +58,17 @@ namespace WinForms3DModelViewer
 
         private int skippedPixelsDraw = 0;
 
+        private Bitmap albedoMap;
+        private Bitmap normalMap;
+        private Bitmap specularMap;
+
+        public bool isAlbedoMap = true;
+        public bool isNormalMap = true;
+        public bool isSpecularMap = true;
+
+        public Matrix4x4 toViewerCoord;
+        public Matrix4x4 toProjectionCoord;
+
         public MainForm()
         {
             InitializeComponent();
@@ -63,10 +79,28 @@ namespace WinForms3DModelViewer
         {
             ObjParser parser = new ObjParser();
             (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
-                = parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+                //= parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
                 //parser.Parse(@"D:\RepositHub\AKG\moon.obj");
             //parser.Parse(@"D:\Github projects\AKG\Head\Model.obj");
+                = //parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+            parser.Parse(FilesPath + filesNames[0]);
             //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
+
+            if (isAlbedoMap)
+            {
+                albedoMap = new Bitmap(FilesPath + filesNames[1]);
+            }
+
+            if (isNormalMap)
+            {
+                normalMap = new Bitmap(FilesPath + filesNames[2]);
+            }
+
+            if (isSpecularMap)
+            {
+                specularMap = new Bitmap(FilesPath + filesNames[3]);
+            }
+
             Transform();
         }
 
@@ -74,6 +108,7 @@ namespace WinForms3DModelViewer
         {
             vertices = new List<Vector4>(originalVertices);
             normalVertices = new List<Vector3>(originalNormalVertices);
+            textureVertices = new List<Vector3>(originalTextureVertices);
             poligons = new List<int[][]>(originalPoligons);
 
             var eye = this.viewPoint;
@@ -90,10 +125,12 @@ namespace WinForms3DModelViewer
 
             //Place and transform model from local to Viewer coordinates
             var viewerMatrix = ToViewerCoordinates(eye, target, up);
-            
+
+            toViewerCoord = viewerMatrix;
+
 
             var projectionMatrix = ToProjectionCoordinates();
-
+            toProjectionCoord = projectionMatrix;
             var viewPortMatrix = ToViewPortCoordinates();
 
             var mainMatrix = viewerMatrix * projectionMatrix;
@@ -116,13 +153,14 @@ namespace WinForms3DModelViewer
             TransformVectors(projectionMatrix);
             //TransformNormals(projectionMatrix);
             TransformNormals4(projectionMatrix);
-            
-            
-            
+
+
+            Wbuf = new float[vertices.Count];
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
             for (int i = 0; i < vertices.Count; i++)
             {
-                vertices[i] /= vertices[i].W;
+                Wbuf[i] = vertices[i].W;
+                vertices[i] /=  vertices[i].W;
             }
             
 
@@ -330,9 +368,137 @@ namespace WinForms3DModelViewer
                                 var Bnormal = normalVertices[sortedPoligonVertices[1][2] - 1];
                                 var Cnormal = normalVertices[sortedPoligonVertices[0][2] - 1];
 
-                                var pixelNormal = CountPixelNormalByVertexesAndNormals(A, B, C, pixelVector, Anormal, Bnormal, Cnormal);
 
-                                Vector3 color = VertexColorByFongo(pixelNormal, pixelVector);
+                                Vector3 Atexture, Btexture, Ctexture;
+                                Vector3 pixelTextureKoef = new Vector3(0, 0, 0);
+                                Vector3 pixelTexture = new Vector3(0,0,0);
+
+                                if (isAlbedoMap || isNormalMap || isSpecularMap)
+                                {
+                                    Atexture = textureVertices[sortedPoligonVertices[2][1] - 1];
+                                    Btexture = textureVertices[sortedPoligonVertices[1][1] - 1];
+                                    Ctexture = textureVertices[sortedPoligonVertices[0][1] - 1];
+                                    A.W = Wbuf[sortedPoligonVertices[2][0] - 1];
+                                    B.W = Wbuf[sortedPoligonVertices[1][0] - 1];
+                                    C.W = Wbuf[sortedPoligonVertices[0][0] - 1];
+                                    
+                                    Atexture /= A.W;
+                                    Atexture.Z = 1/A.W;
+                                    Btexture /= B.W;
+                                    Btexture.Z = 1/B.W;
+                                    Ctexture /= C.W;
+                                    Ctexture.Z = 1/C.W;
+                                    
+                                    pixelTextureKoef = LinearInterpolation(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
+                                    //var baricentrikCoord = CountSystemOfEquations(A, B, C, pixelVector);
+                                    pixelTextureKoef /= pixelTextureKoef.Z;
+
+                                    //pixelTextureKoef.X =
+                                    //    (Atexture.X / A.Z* baricentrikCoord.X + Btexture.X / B.Z* baricentrikCoord.Y + Ctexture.X / C.Z* baricentrikCoord.Z) 
+                                    //    ;
+                                    //pixelTextureKoef.Y =
+                                    //    (Atexture.Y / A.Z* baricentrikCoord.X + Btexture.Y / B.Z* baricentrikCoord.Y + Ctexture.Y / C.Z* baricentrikCoord.Z);
+                                    //pixelTextureKoef.Z =
+                                    //    (baricentrikCoord.X / A.Z + baricentrikCoord.Y / B.Z + baricentrikCoord.Z  / C.Z) ;
+                                    //pixelTextureKoef.X /= pixelTextureKoef.Z;
+                                    //pixelTextureKoef.Y /= pixelTextureKoef.Z;
+                                    //pixelTextureKoef = LinearInterpolationT(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
+                                }
+
+
+                                Vector3 diffuseAndAmbientKoef = new Vector3(5, 5, 5);
+
+                                if (isAlbedoMap)
+                                {
+                                    pixelTexture.X = pixelTextureKoef.X * albedoMap.Width;
+                                    pixelTexture.Y = pixelTextureKoef.Y * albedoMap.Height;
+
+                                    pixelTexture.X = pixelTexture.X < 0
+                                        ? 0
+                                        : (pixelTexture.X >= albedoMap.Width ? albedoMap.Width - 1 : pixelTexture.X);
+
+                                    pixelTexture.Y = pixelTexture.Y < 1
+                                        ? 1
+                                        : (pixelTexture.Y >= albedoMap.Height ? albedoMap.Height : pixelTexture.Y);
+
+
+                                    Color albedoColor = albedoMap.GetPixel((int)pixelTexture.X, albedoMap.Height - (int)pixelTexture.Y);
+
+                                    (diffuseAndAmbientKoef.X, diffuseAndAmbientKoef.Y, diffuseAndAmbientKoef.Z) = (albedoColor.R, albedoColor.G, albedoColor.B);
+                                }
+
+
+                                Vector3 pixelNormal;
+
+                                if (isNormalMap)
+                                {
+                                    pixelTexture.X = pixelTextureKoef.X * normalMap.Width;
+                                    pixelTexture.Y = pixelTextureKoef.Y * normalMap.Height;
+
+                                    pixelTexture.X = pixelTexture.X < 0
+                                        ? 0
+                                        : (pixelTexture.X >= normalMap.Width ? normalMap.Width - 1 : pixelTexture.X);
+
+                                    pixelTexture.Y = pixelTexture.Y < 1
+                                        ? 1
+                                        : (pixelTexture.Y >= normalMap.Height ? normalMap.Height : pixelTexture.Y);
+
+
+                                    Color normalColor = normalMap.GetPixel((int)pixelTexture.X, normalMap.Height - (int)pixelTexture.Y);
+
+                                    //pixelNormal.X = normalColor.R;
+                                    //pixelNormal.Y = normalColor.G;
+                                    //pixelNormal.Z = normalColor.B;
+
+                                    //pixelNormal.X = normalColor.R * 2 - 1;
+                                    //pixelNormal.Y = normalColor.G * 2 - 1;
+                                    //pixelNormal.Z = normalColor.B * 2 - 1;
+
+                                    pixelNormal.X = (normalColor.R / 255F) * 2 - 1;
+                                    pixelNormal.Y = (normalColor.G / 255F) * 2 - 1;
+                                    pixelNormal.Z = (normalColor.B / 255F) * 2 - 1;
+
+                                    pixelNormal = Vector3.Normalize(pixelNormal);
+
+                                    pixelNormal = Vector3.Transform(pixelNormal, toViewerCoord);
+                                    
+                                    pixelNormal = Vector3.Transform(pixelNormal, toProjectionCoord);
+
+                                    //pixelNormal.X = pixelNormal.X * 2 - 1;
+                                    //pixelNormal.Y = pixelNormal.Y * 2 - 1;
+                                    //pixelNormal.Z = pixelNormal.Z * 2 - 1;
+
+                                    //pixelNormal = pixelNormal * -1;
+                                }
+                                else
+                                {
+                                    pixelNormal = LinearInterpolation(A, B, C, pixelVector, Anormal, Bnormal, Cnormal);
+                                }
+
+
+                                Vector3 specularKoef = new Vector3(1,1,1);
+
+                                if (isSpecularMap)
+                                {
+                                    pixelTexture.X = pixelTextureKoef.X * specularMap.Width;
+                                    pixelTexture.Y = pixelTextureKoef.Y * specularMap.Height;
+
+                                    pixelTexture.X = pixelTexture.X < 0
+                                        ? 0
+                                        : (pixelTexture.X >= specularMap.Width ? specularMap.Width - 1 : pixelTexture.X);
+
+                                    pixelTexture.Y = pixelTexture.Y < 1
+                                        ? 1
+                                        : (pixelTexture.Y >= specularMap.Height ? specularMap.Height : pixelTexture.Y);
+
+
+                                    Color specularColor = specularMap.GetPixel((int)pixelTexture.X, specularMap.Height - (int)pixelTexture.Y);
+
+                                    (specularKoef.X, specularKoef.Y, specularKoef.Z) = (specularColor.R, specularColor.G, specularColor.B);
+                                }
+
+
+                                Vector3 color = VertexColorByFongo(pixelNormal, pixelVector, diffuseAndAmbientKoef, diffuseAndAmbientKoef, specularKoef);
 
                                 brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255), (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
 
@@ -370,8 +536,9 @@ namespace WinForms3DModelViewer
             var bm = new Bitmap(width, height);
             using (var gr = Graphics.FromImage(bm))
             {
-                gr.Clear(Color.WhiteSmoke);
-
+                //gr.Clear(Color.WhiteSmoke);
+                gr.Clear(Color.Black);
+                
                 foreach (var poligon in poligons)
                 {
                     float yMax = float.MinValue;
@@ -529,20 +696,34 @@ namespace WinForms3DModelViewer
             return lambertComponent * color;
         }
 
-        private Vector3 VertexColorByFongo( Vector3 vertexNormal, Vector4 vertexpixel4)
+        private Vector3 VertexColorByFongo(Vector3 vertexNormal, Vector4 vertexpixel4, Vector3 ambientKoef, Vector3 diffuseKoef, Vector3 specularKoef)
         {
             var matrix = FromViewPortCoordinates();
             var vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
             vertexpixel =  Vector3.Transform(vertexpixel, matrix);
+
+            var ambientLightColor = new Vector3(3F, 1F, 3F) * (ambientKoef / 20f);
             
-            var ambientLightColor = new Vector3(25F, 15F, 25F);
-            var diffuzeKoef = 1;
-            var specularKoef = 1;
+            var diffuzeKoefL = 4f;
+            if (isAlbedoMap)
+            {
+                diffuzeKoefL = 0.5f;
+            }
+
+            var specularKoefL = 2.2f;
+            if (isSpecularMap)
+            {
+                specularKoefL = 0.12f;
+            }
             vertexpixel = new Vector3(0, 0, 0);
-            var diffuseColor = new Vector3(12F, 128F, 1F);
+            //var diffuseColor = new Vector3(12F, 128F, 1F);
+
+            var diffuseColor = new Vector3(30F, 30F, 25F);
             var specularColor = new Vector3(255F, 255F, 255F);
 
-
+            //var ambientLightColor = ambientKoef;
+            //var diffuseColor = new Vector3(30F, 30F, 30F);
+            //var specularColor = new Vector3(120F, 120F, 120F);
 
             Vector3 lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z) - vertexpixel;
             // lightDirection = new Vector3(lightPoint.X, lightPoint.Y, lightPoint.Z);
@@ -554,12 +735,12 @@ namespace WinForms3DModelViewer
             //}
             Vector3 N = Vector3.Normalize(vertexNormal);
 
-            float lambertComponent = (float)diffuzeKoef * Math.Max(Vector3.Dot(N, L), 0);
-            Vector3 diffuseLight = diffuseColor * lambertComponent;
+            float lambertComponent = (float)diffuzeKoefL * Math.Max(Vector3.Dot(N, L), 0);
 
+            Vector3 diffuseLight = (diffuseKoef / 10f) * diffuseColor * lambertComponent;
 
-            //vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
-            //vertexpixel =  Vector3.Transform(vertexpixel, matrix);
+            vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
+            vertexpixel =  Vector3.Transform(vertexpixel, matrix);
             //vertexpixel = new Vector3(0, 0, 0);
             Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexpixel;
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
@@ -567,8 +748,9 @@ namespace WinForms3DModelViewer
             Vector3 E = Vector3.Normalize(eyeVector);
             Vector3 R = Vector3.Reflect(-L, N);
 
-            float specular = specularKoef * (float)Math.Pow(Math.Max(Vector3.Dot(R, E), 0), shiness);
+            float specular = specularKoefL * (float)Math.Pow(Math.Max(Vector3.Dot(R, E), 0), shiness);
             Vector3 specularLight = specularColor * specular;
+            specularLight *= specularKoef / 10F;
 
             Vector3 sumColor = ambientLightColor;
             sumColor += diffuseLight;
@@ -577,14 +759,124 @@ namespace WinForms3DModelViewer
             sumColor = new Vector3(Math.Min(sumColor.X, 255), Math.Min(sumColor.Y, 255), Math.Min(sumColor.Z, 255));
             return sumColor;
         }
+        
+        private Vector3 LinearInterpolationT(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 t1, Vector3 t2, Vector3 t3)
+        {
+            float startX, startZ;
+            //float Sb1, b1E;
+            float u1, v1;
+            t1.X = t1.X / a1.Z;
+            t1.Y = t1.Y / a1.Z;
+            t1.Z = 1/ a1.Z;
+            t2.X = t2.X / a2.Z;
+            t2.Y = t2.Y / a2.Z;
+            t2.Z = 1/ a2.Z;
+            t3.X = t3.X / a3.Z;
+            t3.Y = t3.Y / a3.Z;
+            t3.Z = 1/ a3.Z;
+            if (b.Y >= a2.Y)
+            {
+                var BAK = (b.Y - a2.Y) / (a1.Y - b.Y);
+                startX = (a2.X + a1.X * BAK) / (BAK + 1);
+                var edge2 =  getLineLength(a1, a2);
+                var Sb1 = getLineLength(a1, new Vector4(startX, b.Y, 0, 0)) / edge2;
+                var b1E = getLineLength(a2, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                //var b1E = getLineLength(a1, new Vector4(startX, b.Y, 0, 0)) / edge2;
+                //var Sb1 = getLineLength(a2, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                
+                startZ = (a2.Z + a1.Z * BAK) / (BAK + 1);
+                //u1 = (t1.X*b1E + t2.X*Sb1) / (t1.Z*b1E + t2.Z*Sb1);
+                //v1 = (t1.Y*b1E + t2.Y*Sb1) / (t1.Z*b1E + t2.Z*Sb1);
+                u1 = (t1.X*b1E + t2.X*Sb1) * startZ;
+                v1 = (t1.Y*b1E + t2.Y*Sb1) * startZ;
 
-        private Vector3 CountPixelNormalByVertexesAndNormals(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
+            }
+            else
+            {
+                var CBK = (b.Y - a3.Y) / (a2.Y - b.Y);
+                startX = (a3.X + a2.X * CBK) / (CBK + 1);
+                var edge2 =  getLineLength(a2, a3);
+                var Sb1 = getLineLength(a2, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                var b1E = getLineLength(a3, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                //var b1E = getLineLength(a2, new Vector4(startX, b.Y, 0, 0))/ edge2;
+                //var Sb1 = getLineLength(a3, new Vector4(startX, b.Y, 0, 0))/ edge2;
+               // u1 = (t2.X*b1E + t3.X*Sb1) / (t2.Z*b1E + t3.Z*Sb1);
+                //v1 = (t2.Y*b1E + t3.Y*Sb1) / (t2.Z*b1E + t3.Z*Sb1);
+                startZ = (a3.Z + a2.Z * CBK) / (CBK + 1);
+                u1 = (t2.X*b1E + t3.X*Sb1) * startZ;
+                v1 = (t2.Y*b1E + t3.Y*Sb1) * startZ;
+
+            }
+            
+            var CAK = (b.Y - a3.Y) / (a1.Y - b.Y);
+            var endX = (a3.X + a1.X * CAK) / (CAK + 1);
+            var endZ = (a3.Z + a1.Z * CAK) / (CAK + 1);
+            
+            
+            var edge1 = getLineLength(a1, a3);
+            var Sb0 = getLineLength(a1, new Vector4(endX, b.Y, 0, 0))/edge1;
+            var b0E = getLineLength(a3, new Vector4(endX, b.Y, 0, 0))/edge1;
+            //var b0E = getLineLength(a1, new Vector4(endX, b.Y, 0, 0))/edge1;
+            //var Sb0 = getLineLength(a3, new Vector4(endX, b.Y, 0, 0))/edge1;
+            var u0 = (t1.X*b0E + t3.X*Sb0) / (t1.Z*b0E + t3.Z*Sb0);
+            var v0 = (t1.Y*b0E + t3.Y*Sb0) / (t1.Z*b0E + t3.Z*Sb0);
+
+            var edge0 = getLineLength(new Vector4(startX, b.Y, 0, 0), new Vector4(endX, b.Y, 0, 0));
+            var Sb = getLineLength(new Vector4(startX, b.Y, 0, 0), b) / edge0;
+            var bE = getLineLength(new Vector4(endX, b.Y, 0, 0), b) / edge0;
+            //var bE = getLineLength(new Vector4(startX, b.Y, 0, 0), b) / edge0;
+            //var Sb = getLineLength(new Vector4(endX, b.Y, 0, 0), b) / edge0;
+
+           /* u0 = u0 / endZ;
+            v0 = v0 / endZ;
+            u1 = u1 /startZ;
+            v1 = v1 / startZ;
+            startZ = 1 / startZ;
+            endZ = 1 / endZ;
+            */
+            var u = (u1*bE + u0*Sb) ;/// (startZ*bE + endZ*Sb);
+            var v = (v1*bE + v0*Sb) ;/// (startZ*bE + endZ*Sb);
+            
+
+            //var koeffs = CountSystemOfEquations(a1, a2, a3, b);
+
+            //var normal = koeffs.X * n1 + koeffs .Y * n2 + koeffs .Z * n3;
+            
+            //var matrix = FromViewPortCoordinates();
+            //var vertexpixel = normal;
+            //normal =  Vector3.Transform(normal, matrix);
+
+            return new Vector3(u, v, 0);
+        }
+
+        private float getLineLength(Vector4 a1, Vector4 a2)
+        {
+            return (float) Math.Sqrt((a2.X - a1.X) * (a2.X - a1.X) + (a2.Y - a1.Y) * (a2.Y - a1.Y));
+        }
+
+
+        private Vector3 LinearInterpolation(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
         {
 
             
             var koeffs = CountSystemOfEquations(a1, a2, a3, b);
 
             var normal = koeffs.X * n1 + koeffs .Y * n2 + koeffs .Z * n3;
+            
+            //var matrix = FromViewPortCoordinates();
+            //var vertexpixel = normal;
+            //normal =  Vector3.Transform(normal, matrix);
+
+            return normal;
+        }
+        
+        private Vector3 LinearInterpolationD(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
+        {
+
+            
+            var koeffs = CountSystemOfEquations(a1, a2, a3, b);
+
+            var normal = n1/koeffs.X + n2/koeffs .Y + n3/koeffs .Z;
             
             //var matrix = FromViewPortCoordinates();
             //var vertexpixel = normal;
@@ -697,14 +989,14 @@ namespace WinForms3DModelViewer
             {
                 if (Keyboard.IsKeyDown(Keys.W))
                 {
-                    xRotation -= aDelta;
+                    xRotation -= lDelta;
                     neadDrow = true;
                 }
 
                 ;
                 if (Keyboard.IsKeyDown(Keys.S))
                 {
-                    xRotation += aDelta;
+                    xRotation += lDelta;
                     neadDrow = true;
                 }
 

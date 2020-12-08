@@ -1,4 +1,4 @@
-#Shovel Knight/*
+Shovel Knight/*
 Head/*
 3DModelViewer/.idea/*
 
@@ -33,3 +33,6 @@ Head/*
 *.exe
 *.out
 *.app
+3DModelViewer/WinForms3DModelViewer/obj/Debug/*
+3DModelViewer/WinForms3DModelViewer/bin/Debug/*
+3DModelViewer/WinForms3DModelViewer/bin/Debug/WinForms3DModelViewer.pdb
