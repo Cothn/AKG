@@ -15,7 +15,7 @@ namespace WinForms3DModelViewer
     public partial class MainForm : Form
     {
         //private const string FilesPath = @"D:\Github projects\AKG\Head\";
-        private const string FilesPath = @"D:\RepositHub\AKG\Board\";
+        private const string FilesPath = @"D:\RepositHub\AKG\Head\";
 
         private List<string> filesNames = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
 
@@ -63,8 +63,8 @@ namespace WinForms3DModelViewer
         private Bitmap specularMap;
 
         public bool isAlbedoMap = true;
-        public bool isNormalMap = false;
-        public bool isSpecularMap = false;
+        public bool isNormalMap = true;
+        public bool isSpecularMap = true;
 
         public Matrix4x4 toViewerCoord;
         public Matrix4x4 toProjectionCoord;
