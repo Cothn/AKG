@@ -14,10 +14,18 @@ namespace WinForms3DModelViewer
 {
     public partial class MainForm : Form
     {
-        //private const string FilesPath = @"D:\Github projects\AKG\Head\";
-        private const string FilesPath = @"D:\RepositHub\AKG\Head\";
+        private string FilesPath;
 
-        private List<string> filesNames = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
+        private const string FilesPathM = @"D:\Github projects\AKG\Head\";
+        //private const string FilesPathM = @"D:\RepositHub\AKG\Head\";
+
+        private const string FilesPathC = @"D:\Github projects\AKG\Skybox\";
+        //private const string FilesPathC = @"D:\RepositHub\AKG\Skybox\";
+
+        private List<string> filesNames;
+
+        private List<string> filesNamesM = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
+        private List<string> filesNamesC = new List<string> { "Model.obj" };
 
         readonly Vector3 defaultColor = new Vector3(255, 255, 255);
         readonly float shiness = 30;
@@ -29,8 +37,28 @@ namespace WinForms3DModelViewer
         private List<Vector3> textureVertices;
         private List<Vector3> originalTextureVertices;
 
+        private List<Vector4> verticesM;
+        private List<Vector4> originalVerticesM;
+        private List<Vector3> normalVerticesM;
+        private List<Vector3> originalNormalVerticesM;
+        private List<Vector3> textureVerticesM;
+        private List<Vector3> originalTextureVerticesM;
+
+        private List<Vector4> verticesC;
+        private List<Vector4> originalVerticesC;
+        private List<Vector3> normalVerticesC;
+        private List<Vector3> originalNormalVerticesC;
+        private List<Vector3> textureVerticesC;
+        private List<Vector3> originalTextureVerticesC;
+
         private List<int[][]> originalPoligons;
         private List<int[][]> poligons;
+
+        private List<int[][]> originalPoligonsM;
+        private List<int[][]> poligonsM;
+
+        private List<int[][]> originalPoligonsC;
+        private List<int[][]> poligonsC;
 
         public float[] Wbuf;
         private float[][] zBuffer;
@@ -62,12 +90,14 @@ namespace WinForms3DModelViewer
         private Bitmap normalMap;
         private Bitmap specularMap;
 
-        public bool isAlbedoMap = true;
-        public bool isNormalMap = true;
-        public bool isSpecularMap = true;
+        public bool isAlbedoMap = false;
+        public bool isNormalMap = false;
+        public bool isSpecularMap = false;
 
         public Matrix4x4 toViewerCoord;
         public Matrix4x4 toProjectionCoord;
+
+        public bool IsModelNow;
 
         public MainForm()
         {
@@ -78,13 +108,18 @@ namespace WinForms3DModelViewer
         private void MainForm_Load(object sender, EventArgs e)
         {
             ObjParser parser = new ObjParser();
-            (originalVertices, originalPoligons, originalNormalVertices, originalTextureVertices) 
-                //= parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
-                //parser.Parse(@"D:\RepositHub\AKG\moon.obj");
-            //parser.Parse(@"D:\Github projects\AKG\Head\Model.obj");
-                = //parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
-            parser.Parse(FilesPath + filesNames[0]);
+                (originalVerticesM, originalPoligonsM, originalNormalVerticesM, originalTextureVerticesM)
+                    //= parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+                    //parser.Parse(@"D:\RepositHub\AKG\moon.obj");
+                    //parser.Parse(@"D:\Github projects\AKG\Head\Model.obj");
+                    = //parser.Parse(@"D:\RepositHub\AKG\Head\Model.obj");
+                    parser.Parse(FilesPathM + filesNamesM[0]);
             //= parser.Parse(@"D:\RepositHub\AKG\Shovel Knight\Model.obj");
+
+            (originalVerticesC, originalPoligonsC, originalNormalVerticesC, originalTextureVerticesC) = parser.Parse(FilesPathC + filesNamesC[0]);
+
+            FilesPath = FilesPathM;
+            filesNames = filesNamesM;
 
             if (isAlbedoMap)
             {
@@ -101,11 +136,28 @@ namespace WinForms3DModelViewer
                 specularMap = new Bitmap(FilesPath + filesNames[3]);
             }
 
+            Transform(false);
             Transform();
+
         }
 
-        public void Transform()
+        public void Transform(bool isModel = true)
         {
+            if (isModel)
+            {
+                originalVertices = originalVerticesM;
+                originalNormalVertices = originalNormalVerticesM;
+                originalTextureVertices = originalTextureVerticesM;
+                originalPoligons = originalPoligonsM;
+            }
+            else
+            {
+                originalVertices = originalVerticesC;
+                originalNormalVertices = originalNormalVerticesC;
+                originalTextureVertices = originalTextureVerticesC;
+                originalPoligons = originalPoligonsC;
+            }
+
             vertices = new List<Vector4>(originalVertices);
             normalVertices = new List<Vector3>(originalNormalVertices);
             textureVertices = new List<Vector3>(originalTextureVertices);
@@ -118,20 +170,69 @@ namespace WinForms3DModelViewer
             eyePoint = eye;
 
             var k = (float)Math.PI / 180;
-            var rm = Matrix4x4.CreateFromYawPitchRoll((yRotation % 360) * k, (xRotation % 360) * k, (zRotation % 360) * k);
+            //var rm = Matrix4x4.CreateFromYawPitchRoll((yRotation % 360) * k, (xRotation % 360) * k, (zRotation % 360) * k);
+
+            Matrix4x4 rm;
+
+            if (isModel)
+            {
+                rm = Matrix4x4.CreateFromYawPitchRoll((yRotation % 360) * k, (xRotation % 360) * k, (zRotation % 360) * k);
+            }
+            else
+            {
+                rm = Matrix4x4.CreateFromYawPitchRoll((yRotation % 360) * k, (xRotation % 360) * k, (zRotation % 360) * k);
+                //rm.M41 = 0;
+                //rm.M42 = 0;
+                //rm.M43 = 0;
+
+                //rm.M14 = 0;
+                //rm.M24 = 0;
+                //rm.M34 = 0;
+            }
+
 
             eye = Vector3.Transform(eye, rm);
             up = Vector3.Transform(up, rm);
 
             //Place and transform model from local to Viewer coordinates
-            var viewerMatrix = ToViewerCoordinates(eye, target, up);
+            Matrix4x4 viewerMatrix;
+
+            if (isModel)
+            {
+                viewerMatrix = ToViewerCoordinates(eye, target, up);
+            }
+            else
+            {
+                viewerMatrix = ToViewerCoordinatesCube(eye, target, up);
+            }
 
             toViewerCoord = viewerMatrix;
 
 
-            var projectionMatrix = ToProjectionCoordinates();
+            Matrix4x4 projectionMatrix;
+
+            if (isModel)
+            {
+                projectionMatrix = ToProjectionCoordinates();
+            }
+            else
+            {
+                projectionMatrix = ToProjectionCoordinates();
+            }
+
             toProjectionCoord = projectionMatrix;
-            var viewPortMatrix = ToViewPortCoordinates();
+
+
+            Matrix4x4 viewPortMatrix;
+
+            if (isModel)
+            {
+                viewPortMatrix = ToViewPortCoordinates();
+            }
+            else
+            {
+                viewPortMatrix = ToViewPortCoordinates();
+            }
 
             var mainMatrix = viewerMatrix * projectionMatrix;
 
@@ -145,8 +246,7 @@ namespace WinForms3DModelViewer
 
             TransformVectors(viewerMatrix);
             TransformNormals(viewerMatrix);
-            
-            
+
 
             viewerVertices = new List<Vector4>(vertices);
 
@@ -166,10 +266,30 @@ namespace WinForms3DModelViewer
 
             projectionVertices = new List<Vector4>(vertices);
 
-            removePoligons(poligons, this.viewPoint);
-            
+            if (isModel)
+            {
+                removePoligons(poligons, this.viewPoint);
+            }
+
             TransformVectors(viewPortMatrix);
             //TransformNormals(viewPortMatrix);
+
+            if (isModel)
+            {
+                verticesM = vertices;
+                normalVerticesM = normalVertices;
+                textureVerticesM = textureVertices;
+
+                poligonsM = poligons;
+            }
+            else
+            {
+                verticesC = vertices;
+                normalVerticesC = normalVertices;
+                textureVerticesC = textureVertices;
+
+                poligonsC = poligons;
+            }
         }
 
         public void removePoligons(List<int[][]> poligons, Vector3 eye)
@@ -218,12 +338,40 @@ namespace WinForms3DModelViewer
                 -Vector3.Dot(xAxis, eye), -Vector3.Dot(yAxis, eye), -Vector3.Dot(zAxis, eye), 1);
             
 
+
+
             //var viewerMatrix = new Matrix4x4(
             //11, 12, 13, 14,
             //21, 22, 23, 24,
             //31, 32, 33, 34,
             //41, 42, 43, 44);
             
+            return viewerMatrix;
+        }
+
+        public Matrix4x4 ToViewerCoordinatesCube(Vector3 eye, Vector3 target, Vector3 up)
+        {
+            var zAxis = Vector3.Normalize(eye - target);
+            var xAxis = Vector3.Normalize(Vector3.Cross(up, zAxis));
+            var yAxis = Vector3.Normalize(up);  //up;
+
+            var scale = 5;
+
+            var viewerMatrix = new Matrix4x4(
+                xAxis.X * scale, yAxis.X * scale, zAxis.X, 0,
+                xAxis.Y * scale, yAxis.Y * scale, zAxis.Y, 0,
+                xAxis.Z * scale, yAxis.Z * scale, zAxis.Z, 0,
+                -Vector3.Dot(xAxis, eye), -Vector3.Dot(yAxis, eye), -Vector3.Dot(zAxis, eye), 1);
+
+
+
+
+            //var viewerMatrix = new Matrix4x4(
+            //11, 12, 13, 14,
+            //21, 22, 23, 24,
+            //31, 32, 33, 34,
+            //41, 42, 43, 44);
+
             return viewerMatrix;
         }
 
@@ -244,6 +392,26 @@ namespace WinForms3DModelViewer
                                                    0, 0, m22, -1,
                                                    0, 0, m23, 0);
             
+            return projectionMatrix;
+        }
+
+        public Matrix4x4 ToProjectionCoordinatesCube()
+        {
+            var zNear = 0.2f;
+            var zFar = 15;
+            var aspect = pictureBoxPaintArea.Width / (float)pictureBoxPaintArea.Height;
+            var fov = (float)Math.PI * (60) / 180;
+
+            var m00 = 1 / (aspect * (float)Math.Tan(fov / 2));
+            var m11 = 1 / (float)Math.Tan(fov / 2);
+            var m22 = zFar / (zNear - zFar);
+            var m23 = (zNear * zFar) / (zNear - zFar);
+
+            var projectionMatrix = new Matrix4x4(m00, 0, 0, 0,
+                0, m11, 0, 0,
+                0, 0, m22, 0,
+                0, 0, 0, 0);
+
             return projectionMatrix;
         }
 
@@ -268,7 +436,29 @@ namespace WinForms3DModelViewer
             
             return viewerMatrix;
         }
-        
+
+        public Matrix4x4 ToViewPortCoordinatesCube()
+        {
+            var width = pictureBoxPaintArea.Width * 3 / 4;
+            var height = pictureBoxPaintArea.Height * 3 / 4;
+
+            var xMin = pictureBoxPaintArea.Width / 8;
+            var yMin = pictureBoxPaintArea.Height / 8;
+
+            var m00 = width / 2;
+            var m11 = -height / 2;
+            var m03 = xMin + (width / 2);
+            var m13 = yMin + (height / 2);
+            var m22 = 255 / 2f;
+
+            var viewerMatrix = new Matrix4x4(m00, 0, 0, 0,
+                0, m11, 0, 0,
+                0, 0, 1, 0,
+                1, 1, 0, 1);
+
+            return viewerMatrix;
+        }
+
         public Matrix4x4 FromViewPortCoordinates()
         {
             var width = pictureBoxPaintArea.Width * 3 / 4;
@@ -360,7 +550,10 @@ namespace WinForms3DModelViewer
                             var z = (startZ + endZ *K) / (K + 1);
                             if (zBuffer[(int) y][(int) x] > z)
                             {
-                                zBuffer[(int) y][(int) x] = z;
+                                //if (IsModelNow)
+                                //{
+                                    zBuffer[(int) y][(int) x] = z;
+                                //}
 
                                 Vector4 pixelVector = new Vector4(x, y, z, 1);
 
@@ -405,6 +598,7 @@ namespace WinForms3DModelViewer
                                     //pixelTextureKoef = LinearInterpolationT(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
                                 }
 
+                                Color albedoColor = Color.Blue;
 
                                 Vector3 diffuseAndAmbientKoef = new Vector3(5, 5, 5);
 
@@ -422,7 +616,7 @@ namespace WinForms3DModelViewer
                                         : (pixelTexture.Y >= albedoMap.Height ? albedoMap.Height : pixelTexture.Y);
 
 
-                                    Color albedoColor = albedoMap.GetPixel((int)pixelTexture.X, albedoMap.Height - (int)pixelTexture.Y);
+                                    albedoColor = albedoMap.GetPixel((int)pixelTexture.X, albedoMap.Height - (int)pixelTexture.Y);
 
                                     (diffuseAndAmbientKoef.X, diffuseAndAmbientKoef.Y, diffuseAndAmbientKoef.Z) = (albedoColor.R, albedoColor.G, albedoColor.B);
                                 }
@@ -497,10 +691,19 @@ namespace WinForms3DModelViewer
                                     (specularKoef.X, specularKoef.Y, specularKoef.Z) = (specularColor.R, specularColor.G, specularColor.B);
                                 }
 
+                                if (IsModelNow)
+                                {
+                                    Vector3 color = VertexColorByFongo(pixelNormal, pixelVector, diffuseAndAmbientKoef,
+                                        diffuseAndAmbientKoef, specularKoef);
 
-                                Vector3 color = VertexColorByFongo(pixelNormal, pixelVector, diffuseAndAmbientKoef, diffuseAndAmbientKoef, specularKoef);
+                                    brush = new SolidBrush(Color.FromArgb((int) Math.Min(color.X, 255),
+                                        (int) Math.Min(color.Y, 255), (int) Math.Min(color.Z, 255)));
+                                }
+                                else
+                                {
+                                    brush = new SolidBrush(albedoColor);
+                                }
 
-                                brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255), (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
 
                                 bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
                             }
@@ -518,27 +721,36 @@ namespace WinForms3DModelViewer
         //отрисовка модели
         public void Draw()
         {
+            Bitmap bm;
+
+            var width = pictureBoxPaintArea.Width + 1;
+            var height = pictureBoxPaintArea.Height + 1;
+
+            if (width == 0 || height == 0)
+                return;
+
+            bm = new Bitmap(width, height);
+
+            IsModelNow = false;
+
+
+            vertices = verticesC;
+            normalVertices = normalVerticesC;
+            textureVertices = textureVerticesC;
+
+            poligons = poligonsC;
+
             InitializeZBuffer();
 
             SortPoligonsByMinZ();
 
             skippedPixelsDraw = 0;
 
-            var minX = vertices.Min(x => x.X);
-            var maxX = vertices.Max(x => x.X);
-
-            var width = pictureBoxPaintArea.Width+1;
-            var height = pictureBoxPaintArea.Height+1;
-
-            if (width == 0 || height == 0)
-                return;
-
-            var bm = new Bitmap(width, height);
             using (var gr = Graphics.FromImage(bm))
             {
                 //gr.Clear(Color.WhiteSmoke);
                 gr.Clear(Color.Black);
-                
+
                 foreach (var poligon in poligons)
                 {
                     float yMax = float.MinValue;
@@ -563,7 +775,49 @@ namespace WinForms3DModelViewer
 
                     DrawTriangle(poligon, gr);
                 };
+
                 
+            
+
+                vertices = verticesM;
+                normalVertices = normalVerticesM;
+                textureVertices = textureVerticesM;
+
+                poligons = poligonsM;
+
+                IsModelNow = true;
+
+                InitializeZBuffer();
+
+                SortPoligonsByMinZ();
+
+                skippedPixelsDraw = 0;
+
+                foreach (var poligon in poligons)
+                {
+                    float yMax = float.MinValue;
+                    int indexMax = -1;
+                    float yMin = float.MaxValue;
+                    int indexMin = -1;
+                    float poligonColorScale;
+                    Vector3 poligonColor;
+
+                    for (int i = 0; i < poligon.Length; i++)
+                    {
+                        var k = poligon[i][0] - 1;
+                        var j = poligon[(i + 1) % poligon.Length][0] - 1;
+
+                        var X1 = (vertices[k].X);
+                        var X2 = (vertices[j].X);
+                        var Y1 = (vertices[k].Y);
+                        var Y2 = (vertices[j].Y);
+                        var Z1 = (vertices[k].Z);
+                        var Z2 = (vertices[j].Z);
+                    }
+
+                    DrawTriangle(poligon, gr);
+                };
+
             }
 
             //LskippedPixelsDraw.Text = skippedPixelsDraw.ToString();
@@ -938,12 +1192,14 @@ namespace WinForms3DModelViewer
             }
 
             viewPoint.Z += (e.Delta / 700.0f);
+            Transform(false);
             Transform();
             neadDrow = true;
         }
 
         private void MainForm_ResizeEnd(object sender, EventArgs e)
         {
+            Transform(false);
             Transform();
             Draw();
         }
@@ -977,6 +1233,7 @@ namespace WinForms3DModelViewer
                     xRotation += v.Y;
                     yRotation += v.X;
                     lastPoint = e.Location;//keep assigning the lastPoint to the current mouse position
+                    Transform(false);
                     Transform();
                     neadDrow = true;
                 }
@@ -1097,6 +1354,7 @@ namespace WinForms3DModelViewer
 
             if (neadDrow)
             {
+                Transform(false);
                 Transform();
                 Draw();
                 neadDrow = false;
