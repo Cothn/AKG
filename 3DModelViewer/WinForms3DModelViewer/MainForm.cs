@@ -25,7 +25,7 @@ namespace WinForms3DModelViewer
         private List<string> filesNames;
 
         private List<string> filesNamesM = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
-        private List<string> filesNamesC = new List<string> { "Model.obj" };
+        private List<string> filesNamesC = new List<string> { "Model.obj", "bottom.jpg", "top.jpg", "left.jpg", "right.jpg", "front.jpg", "back.jpg"};
 
         readonly Vector3 defaultColor = new Vector3(255, 255, 255);
         readonly float shiness = 30;
@@ -63,6 +63,9 @@ namespace WinForms3DModelViewer
         public float[] Wbuf;
         private float[][] zBuffer;
 
+        public float[] WbufM;
+        public float[] WbufC;
+
         Point lastPoint = Point.Empty;
         bool isMouseDown = false;
         bool neadDrow = true;
@@ -90,7 +93,7 @@ namespace WinForms3DModelViewer
         private Bitmap normalMap;
         private Bitmap specularMap;
 
-        public bool isAlbedoMap = false;
+        public bool isAlbedoMap = true;
         public bool isNormalMap = false;
         public bool isSpecularMap = false;
 
@@ -98,6 +101,7 @@ namespace WinForms3DModelViewer
         public Matrix4x4 toProjectionCoord;
 
         public bool IsModelNow;
+        public List<bool> albedoForCube = new List<bool>();
 
         public MainForm()
         {
@@ -257,10 +261,22 @@ namespace WinForms3DModelViewer
 
             Wbuf = new float[vertices.Count];
             // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
+
             for (int i = 0; i < vertices.Count; i++)
             {
                 Wbuf[i] = vertices[i].W;
-                vertices[i] /=  vertices[i].W;
+
+                //if (!isModel)
+                //{
+                //    Wbuf[i] *= 5;
+                //}
+
+                vertices[i] /= vertices[i].W;
+
+                //if (!isModel)
+                //{
+                //    vertices[i] *= 10;
+                //}
             }
             
 
@@ -270,9 +286,14 @@ namespace WinForms3DModelViewer
             {
                 removePoligons(poligons, this.viewPoint);
             }
+            else
+            {
+                removePoligonsCube(poligons, this.viewPoint);
+            }
 
             TransformVectors(viewPortMatrix);
             //TransformNormals(viewPortMatrix);
+
 
             if (isModel)
             {
@@ -281,6 +302,8 @@ namespace WinForms3DModelViewer
                 textureVerticesM = textureVertices;
 
                 poligonsM = poligons;
+
+                WbufM = Wbuf;
             }
             else
             {
@@ -289,6 +312,8 @@ namespace WinForms3DModelViewer
                 textureVerticesC = textureVertices;
 
                 poligonsC = poligons;
+
+                WbufC = Wbuf;
             }
         }
 
@@ -322,7 +347,49 @@ namespace WinForms3DModelViewer
                 }
             }
         }
-        
+
+        public void removePoligonsCube(List<int[][]> poligons, Vector3 eye)
+        {
+            albedoForCube = new List<bool>();
+            int iterator = 0;
+
+            for (int j = 0; j < poligons.Count; j++)
+            {
+                var poligon = poligons[j];
+
+                albedoForCube.Add(true);
+
+                // Remove polygon cut with proj matrix
+                //if (poligon.Any(i => vertices[i[0] - 1].Z < 0 || vertices[i[0] - 1].Z > 1))
+                //{
+                //    poligons.RemoveAt(j);
+                //    j--;
+
+                //    albedoForCube[iterator] = false;
+                //}
+                //else
+                //{
+                    var vector1 = vertices[poligon[1][0] - 1] - vertices[poligon[0][0] - 1];
+                    var vector2 = vertices[poligon[2][0] - 1] - vertices[poligon[0][0] - 1];
+                    var surfaceNormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                        (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                        (vector1.X * vector2.Y - vector1.Y * vector2.X));
+
+
+                    if (surfaceNormal.X * eye.X + surfaceNormal.Y * eye.Y + surfaceNormal.Z * eye.Z < 0.0)
+                    {
+                        poligons.RemoveAt(j);
+                        j--;
+
+                        albedoForCube[iterator] = false;
+                    }
+
+                //}
+
+                iterator++;
+            }
+        }
+
 
         public Matrix4x4 ToViewerCoordinates(Vector3 eye, Vector3 target, Vector3 up)
         {
@@ -357,13 +424,21 @@ namespace WinForms3DModelViewer
 
             var scale = 5;
 
+            xAxis *= scale;
+            yAxis *= scale;
+            //zAxis *= scale;
+
+            var newMatrixForWhat = new Matrix4x4(
+                3f, 0f, 0f, 0f,
+                0f, 3f, 0f, 0f,
+                0f, 0f, 3f, 0f,
+                0f, 0f, 0f, 1f);
+
             var viewerMatrix = new Matrix4x4(
-                xAxis.X * scale, yAxis.X * scale, zAxis.X, 0,
-                xAxis.Y * scale, yAxis.Y * scale, zAxis.Y, 0,
-                xAxis.Z * scale, yAxis.Z * scale, zAxis.Z, 0,
+                xAxis.X, yAxis.X, zAxis.X, 0,
+                xAxis.Y, yAxis.Y, zAxis.Y, 0,
+                xAxis.Z, yAxis.Z, zAxis.Z, 0,
                 -Vector3.Dot(xAxis, eye), -Vector3.Dot(yAxis, eye), -Vector3.Dot(zAxis, eye), 1);
-
-
 
 
             //var viewerMatrix = new Matrix4x4(
@@ -451,10 +526,16 @@ namespace WinForms3DModelViewer
             var m13 = yMin + (height / 2);
             var m22 = 255 / 2f;
 
+            var newMatrixForWhat = new Matrix4x4(
+                3f, 0f, 0f, 0f,
+                0f, 3f, 0f, 0f,
+                0f, 0f, 3f, 0f,
+                0f, 0f, 0f, 1f);
+
             var viewerMatrix = new Matrix4x4(m00, 0, 0, 0,
                 0, m11, 0, 0,
                 0, 0, 1, 0,
-                1, 1, 0, 1);
+                m03, m13, 0, 1);
 
             return viewerMatrix;
         }
@@ -574,17 +655,24 @@ namespace WinForms3DModelViewer
                                     A.W = Wbuf[sortedPoligonVertices[2][0] - 1];
                                     B.W = Wbuf[sortedPoligonVertices[1][0] - 1];
                                     C.W = Wbuf[sortedPoligonVertices[0][0] - 1];
-                                    
-                                    Atexture /= A.W;
-                                    Atexture.Z = 1/A.W;
-                                    Btexture /= B.W;
-                                    Btexture.Z = 1/B.W;
-                                    Ctexture /= C.W;
-                                    Ctexture.Z = 1/C.W;
-                                    
+
+                                    //if (IsModelNow)
+                                    //{
+                                        Atexture /= A.W;
+                                        Atexture.Z = 1 / A.W;
+                                        Btexture /= B.W;
+                                        Btexture.Z = 1 / B.W;
+                                        Ctexture /= C.W;
+                                        Ctexture.Z = 1 / C.W;
+                                    //}
+
                                     pixelTextureKoef = LinearInterpolation(A, B, C, pixelVector, Atexture, Btexture, Ctexture);
                                     //var baricentrikCoord = CountSystemOfEquations(A, B, C, pixelVector);
-                                    pixelTextureKoef /= pixelTextureKoef.Z;
+
+                                    //if (IsModelNow)
+                                    //{
+                                        pixelTextureKoef /= pixelTextureKoef.Z;
+                                    //}
 
                                     //pixelTextureKoef.X =
                                     //    (Atexture.X / A.Z* baricentrikCoord.X + Btexture.X / B.Z* baricentrikCoord.Y + Ctexture.X / C.Z* baricentrikCoord.Z) 
@@ -611,12 +699,25 @@ namespace WinForms3DModelViewer
                                         ? 0
                                         : (pixelTexture.X >= albedoMap.Width ? albedoMap.Width - 1 : pixelTexture.X);
 
-                                    pixelTexture.Y = pixelTexture.Y < 1
-                                        ? 1
-                                        : (pixelTexture.Y >= albedoMap.Height ? albedoMap.Height : pixelTexture.Y);
+                                    if (IsModelNow)
+                                    {
+                                        pixelTexture.Y = pixelTexture.Y < 1
+                                            ? 1
+                                            : (pixelTexture.Y >= albedoMap.Height ? albedoMap.Height : pixelTexture.Y);
+
+                                        albedoColor = albedoMap.GetPixel((int)pixelTexture.X, albedoMap.Height - (int)pixelTexture.Y);
+                                    }
+                                    else
+                                    {
+                                        pixelTexture.Y = pixelTexture.Y < 0
+                                            ? 0
+                                            : (pixelTexture.Y >= albedoMap.Height ? albedoMap.Height - 1 : pixelTexture.Y);
+
+                                        albedoColor = albedoMap.GetPixel((int)pixelTexture.X, (int)pixelTexture.Y);
+                                    }
 
 
-                                    albedoColor = albedoMap.GetPixel((int)pixelTexture.X, albedoMap.Height - (int)pixelTexture.Y);
+                                    //albedoColor = albedoMap.GetPixel((int)pixelTexture.X, albedoMap.Height - (int)pixelTexture.Y);
 
                                     (diffuseAndAmbientKoef.X, diffuseAndAmbientKoef.Y, diffuseAndAmbientKoef.Z) = (albedoColor.R, albedoColor.G, albedoColor.B);
                                 }
@@ -624,7 +725,7 @@ namespace WinForms3DModelViewer
 
                                 Vector3 pixelNormal;
 
-                                if (isNormalMap)
+                                if (isNormalMap && IsModelNow)
                                 {
                                     pixelTexture.X = pixelTextureKoef.X * normalMap.Width;
                                     pixelTexture.Y = pixelTextureKoef.Y * normalMap.Height;
@@ -672,7 +773,7 @@ namespace WinForms3DModelViewer
 
                                 Vector3 specularKoef = new Vector3(1,1,1);
 
-                                if (isSpecularMap)
+                                if (isSpecularMap && IsModelNow)
                                 {
                                     pixelTexture.X = pixelTextureKoef.X * specularMap.Width;
                                     pixelTexture.Y = pixelTextureKoef.Y * specularMap.Height;
@@ -740,9 +841,11 @@ namespace WinForms3DModelViewer
 
             poligons = poligonsC;
 
+            Wbuf = WbufC;
+
             InitializeZBuffer();
 
-            SortPoligonsByMinZ();
+            //SortPoligonsByMinZ();
 
             skippedPixelsDraw = 0;
 
@@ -751,8 +854,55 @@ namespace WinForms3DModelViewer
                 //gr.Clear(Color.WhiteSmoke);
                 gr.Clear(Color.Black);
 
+                var albedoBuf = albedoMap;
+
+                int poligonN = 0;
+                int albedoN = 1;
+
+                //albedoForCube = new List<bool>() { true, true, true, true, true, true, true, true, true, true, true, true};
+
+                while (!albedoForCube[albedoN * 2 - 1])
+                {
+                    albedoN++;
+
+                    if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                    {
+                        break;
+                    }
+                }
+
+                albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
+
                 foreach (var poligon in poligons)
                 {
+                    if (poligonN == 2)
+                    {
+                        poligonN = 0;
+                        albedoN++;
+
+                        if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                        {
+                            break;
+                        }
+
+                        while (!albedoForCube[albedoN * 2 - 1])
+                        {
+                            albedoN++;
+
+                            if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                            {
+                                break;
+                            }
+                        }
+
+                        if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                        {
+                            break;
+                        }
+
+                        albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
+                    }
+
                     float yMax = float.MinValue;
                     int indexMax = -1;
                     float yMin = float.MaxValue;
@@ -774,16 +924,20 @@ namespace WinForms3DModelViewer
                     }
 
                     DrawTriangle(poligon, gr);
+
+                    poligonN++;
                 };
 
-                
-            
+
+                albedoMap = albedoBuf;
 
                 vertices = verticesM;
                 normalVertices = normalVerticesM;
                 textureVertices = textureVerticesM;
 
                 poligons = poligonsM;
+
+                Wbuf = WbufM;
 
                 IsModelNow = true;
 
