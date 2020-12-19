@@ -16,7 +16,7 @@ namespace WinForms3DModelViewer
     {
         private string FilesPath;
 
-        private const string FilesPathM = @"D:\Github projects\AKG\Church\";
+        private const string FilesPathM = @"D:\Github projects\AKG\Head\";
         //private const string FilesPathM = @"D:\RepositHub\AKG\Head\";
 
         private const string FilesPathC = @"D:\Github projects\AKG\Skybox\";
@@ -25,7 +25,8 @@ namespace WinForms3DModelViewer
         private List<string> filesNames;
 
         private List<string> filesNamesM = new List<string> { "Model.obj", "Albedo Map.png", "Normal Map.png", "Specular Map.png" };
-        private List<string> filesNamesC = new List<string> { "Model.obj", "bottom.jpg", "top.jpg", "left.jpg", "right.jpg", "front.jpg", "back.jpg"};
+        private List<string> filesNamesC = new List<string> { "Model.obj", "right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "front.jpg", "back.jpg"};
+        //private List<string> filesNamesC = new List<string> { "Model.obj", "bottom.png", "top.png", "left.png", "right.png", "front.png", "back.png" };
 
         readonly Vector3 defaultColor = new Vector3(255, 255, 255);
         readonly float shiness = 30;
@@ -192,7 +193,8 @@ namespace WinForms3DModelViewer
             }
             else
             {
-                rm = Matrix4x4.CreateFromYawPitchRoll((yRotation % 360) * k, (xRotation % 360) * k, (zRotation % 360) * k);
+                //rm = Matrix4x4.CreateFromYawPitchRoll((yRotation % 360) * k, (xRotation % 360) * k, (zRotation % 360) * k);
+                rm = Matrix4x4.CreateFromYawPitchRoll((0 % 360) * k, (0 % 360) * k, (0 % 360) * k);
                 //rm.M41 = 0;
                 //rm.M42 = 0;
                 //rm.M43 = 0;
@@ -459,8 +461,8 @@ namespace WinForms3DModelViewer
 
             var scale = 5;
 
-            //xAxis *= scale;
-            //yAxis *= scale;
+            xAxis *= scale;
+            yAxis *= scale;
             //zAxis *= scale;
 
             var newMatrixForWhat = new Matrix4x4(
@@ -813,7 +815,7 @@ namespace WinForms3DModelViewer
 
                                     pixelNormal = Vector3.Transform(pixelNormal, toViewerCoord);
                                     
-                                    pixelNormal = Vector3.Transform(pixelNormal, toProjectionCoord);
+                                    //pixelNormal = Vector3.Transform(pixelNormal, toProjectionCoord);
 
                                     //pixelNormal.X = pixelNormal.X * 2 - 1;
                                     //pixelNormal.Y = pixelNormal.Y * 2 - 1;
@@ -828,7 +830,7 @@ namespace WinForms3DModelViewer
                                         var matrixFirst = FromViewPortCoordinates();
                                         var matrixSecond = FromProjectionCoordinates();
 
-                                        var kek = vertices[sortedPoligonVertices[0][0] - 1].X;
+                                        //var kek = vertices[sortedPoligonVertices[0][0] - 1].X;
 
                                         var Cc = vertices[sortedPoligonVertices[0][0] - 1];
                                         //Cc = new Vector4(Cc.X, Cc.Y, Cc.Z, Cc.W);
@@ -849,29 +851,32 @@ namespace WinForms3DModelViewer
                                         Cc = Vector4.Transform(Cc, matrixSecond);
                                         Cc /= Cc.W;
 
-                                        if (kek != vertices[sortedPoligonVertices[0][0] - 1].X)
-                                        {
-                                            kek = kek++;
-                                        }
+                                        //if (kek != vertices[sortedPoligonVertices[0][0] - 1].X)
+                                        //{
+                                        //    kek = kek++;
+                                        //}
 
-                                        var vector1 = Bb - Aa;
-                                        var vector2 = Cc - Aa;
-                                        Anormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
-                                            (vector1.Z * vector2.X - vector1.X * vector2.Z),
-                                            (vector1.X * vector2.Y - vector1.Y * vector2.X));
+                                        //var vector1 = Bb - Aa;
+                                        //var vector2 = Cc - Aa;
+                                        //Anormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                                        //    (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                                        //    (vector1.X * vector2.Y - vector1.Y * vector2.X));
 
-                                        vector1 = Aa - Bb;
-                                        vector2 = Cc - Bb;
-                                        Bnormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
-                                            (vector1.Z * vector2.X - vector1.X * vector2.Z),
-                                            (vector1.X * vector2.Y - vector1.Y * vector2.X));
+                                        //vector1 = Aa - Bb;
+                                        //vector2 = Cc - Bb;
+                                        //Bnormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                                        //    (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                                        //    (vector1.X * vector2.Y - vector1.Y * vector2.X));
 
-                                        vector1 = Aa - Cc;
-                                        vector2 = Bb - Cc;
-                                        Cnormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
-                                            (vector1.Z * vector2.X - vector1.X * vector2.Z),
-                                            (vector1.X * vector2.Y - vector1.Y * vector2.X));
+                                        //vector1 = Aa - Cc;
+                                        //vector2 = Bb - Cc;
+                                        //Cnormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                                        //    (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                                        //    (vector1.X * vector2.Y - vector1.Y * vector2.X));
 
+                                        Anormal = Vector3.Normalize(Anormal);
+                                        Bnormal = Vector3.Normalize(Bnormal);
+                                        Cnormal = Vector3.Normalize(Cnormal);
 
                                         pixelVector = Vector4.Transform(pixelVector, matrixFirst);
                                         pixelVector = Vector4.Transform(pixelVector, matrixSecond);
@@ -979,80 +984,80 @@ namespace WinForms3DModelViewer
                 gr.Clear(Color.Black);
                 
                     var albedoBuf = albedoMap;
-                    /*
-                                    int poligonN = 0;
-                                    int albedoN = 1;
                     
-                                    //albedoForCube = new List<bool>() { true, true, true, true, true, true, true, true, true, true, true, true};
+                    int poligonN = 0;
+                    int albedoN = 1;
+    
+                    //albedoForCube = new List<bool>() { true, true, true, true, true, true, true, true, true, true, true, true};
+    
+                    while (!albedoForCube[albedoN * 2 - 1])
+                    {
+                        albedoN++;
+    
+                        if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                        {
+                            break;
+                        }
+                    }
+    
+                    albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
+    
+                    foreach (var poligon in poligons)
+                    {
+                        if (poligonN == 2)
+                        {
+                            poligonN = 0;
+                            albedoN++;
+    
+                            if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                            {
+                                break;
+                            }
+    
+                            while (!albedoForCube[albedoN * 2 - 1])
+                            {
+                                albedoN++;
+    
+                                if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                                {
+                                    break;
+                                }
+                            }
+    
+                            if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                            {
+                                break;
+                            }
+    
+                            albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
+                        }
+    
+                        float yMax = float.MinValue;
+                        int indexMax = -1;
+                        float yMin = float.MaxValue;
+                        int indexMin = -1;
+                        float poligonColorScale;
+                        Vector3 poligonColor;
+    
+                        for (int i = 0; i < poligon.Length; i++)
+                        {
+                            var k = poligon[i][0] - 1;
+                            var j = poligon[(i + 1) % poligon.Length][0] - 1;
+    
+                            var X1 = (vertices[k].X);
+                            var X2 = (vertices[j].X);
+                            var Y1 = (vertices[k].Y);
+                            var Y2 = (vertices[j].Y);
+                            var Z1 = (vertices[k].Z);
+                            var Z2 = (vertices[j].Z);
+                        }
+    
+                        DrawTriangle(poligon, gr);
+    
+                        poligonN++;
+                    };
                     
-                                    while (!albedoForCube[albedoN * 2 - 1])
-                                    {
-                                        albedoN++;
                     
-                                        if ((albedoN * 2 - 1) >= albedoForCube.Count)
-                                        {
-                                            break;
-                                        }
-                                    }
-                    
-                                    albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
-                    
-                                    foreach (var poligon in poligons)
-                                    {
-                                        if (poligonN == 2)
-                                        {
-                                            poligonN = 0;
-                                            albedoN++;
-                    
-                                            if ((albedoN * 2 - 1) >= albedoForCube.Count)
-                                            {
-                                                break;
-                                            }
-                    
-                                            while (!albedoForCube[albedoN * 2 - 1])
-                                            {
-                                                albedoN++;
-                    
-                                                if ((albedoN * 2 - 1) >= albedoForCube.Count)
-                                                {
-                                                    break;
-                                                }
-                                            }
-                    
-                                            if ((albedoN * 2 - 1) >= albedoForCube.Count)
-                                            {
-                                                break;
-                                            }
-                    
-                                            albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
-                                        }
-                    
-                                        float yMax = float.MinValue;
-                                        int indexMax = -1;
-                                        float yMin = float.MaxValue;
-                                        int indexMin = -1;
-                                        float poligonColorScale;
-                                        Vector3 poligonColor;
-                    
-                                        for (int i = 0; i < poligon.Length; i++)
-                                        {
-                                            var k = poligon[i][0] - 1;
-                                            var j = poligon[(i + 1) % poligon.Length][0] - 1;
-                    
-                                            var X1 = (vertices[k].X);
-                                            var X2 = (vertices[j].X);
-                                            var Y1 = (vertices[k].Y);
-                                            var Y2 = (vertices[j].Y);
-                                            var Z1 = (vertices[k].Z);
-                                            var Z2 = (vertices[j].Z);
-                                        }
-                    
-                                        DrawTriangle(poligon, gr);
-                    
-                                        poligonN++;
-                                    };
-                    
-                    */
                 albedoMap = albedoBuf;
 
                 vertices = verticesM;
@@ -1323,13 +1328,16 @@ namespace WinForms3DModelViewer
             //vertexpixel = new Vector3(0, 0, 0);
 
             //Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexpixel;
-            Vector3 eyeDirection = new Vector3(0, 0, 0) - vertexpixel;
+            Vector3 eyeDirection = new Vector3(0, 0, 1) - vertexpixel;
+            //Vector3 eyeDirection = new Vector3(0,0,-1);
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
             Vector3 N = Vector3.Normalize(vertexNormal);
+            //N.Y = -N.Y;
             Vector3 E = eyeVector;
 
             Vector3 R = Vector3.Reflect(E, N);
+            //R = Vector3.Normalize(R);
 
             float absX = Math.Abs(R.X);
             float absY = Math.Abs(R.Y);
@@ -1349,188 +1357,224 @@ namespace WinForms3DModelViewer
 
             Bitmap albedoMapCurrC = new Bitmap(1,1);
 
+            int scale = 1;
+
+            int faceIndex;
+            float ma;
+            Vector2 uv;
+
+            if (absZ >= absX && absZ >= absY)
+            {
+                faceIndex = R.Z < 0.0 ? 5 : 4;
+                ma = 0.5F / absZ;
+                uv = new Vector2(R.Z < 0.0 ? -R.X : R.X, -R.Y);
+            }
+            else if (absY >= absX)
+            {
+                faceIndex = R.Y < 0.0 ? 3 : 2;
+                ma = 0.5f / absY;
+                uv = new Vector2(R.X, R.Y < 0.0 ? -R.Z : R.Z);
+            }
+            else
+            {
+                faceIndex = R.X < 0.0 ? 1 : 0;
+                ma = 0.5f / absX;
+                uv = new Vector2(R.X < 0.0 ? R.Z : -R.Z, -R.Y);
+            }
+
+            Vector2 koeff = uv * ma;
+            koeff.X += 0.5f;
+            koeff.Y += 0.5f;
+
+            //koeff.Y = 1 - koeff.Y;
+
+            Vector3 pixelTextureKoef;
+
+            pixelTextureKoef = new Vector3(koeff.X, koeff.Y, 1);
+            albedoMapCurrC = CubeBitmaps[faceIndex];
+
             // POSITIVE X
-            if (isXPositive && absX >= absY && absX >= absZ)
-            {
-                // 6 7
-                // u (0 to 1) goes from +z to -z
-                // v (0 to 1) goes from -y to +y
+            //if (!isXPositive && absX >= absY && absX >= absZ)
+            //{
+            //    // 6 7
+            //    // u (0 to 1) goes from +z to -z
+            //    // v (0 to 1) goes from -y to +y
 
-                t = 1 - (vertexpixel.X / R.X);
+            //    t = scale - (vertexpixel.X / R.X);
 
-                resultPixelOnCube.X = 1;
+            //    resultPixelOnCube.X = scale;
 
-                //t = posVec.X - (vertexpixel.X / R.X);
+            //    //t = posVec.X - (vertexpixel.X / R.X);
 
-                //resultPixelOnCube.X = posVec.X;
+            //    //resultPixelOnCube.X = posVec.X;
 
-                resultPixelOnCube.Y = vertexpixel.Y + t * R.Y;
-                resultPixelOnCube.Z = vertexpixel.Z + t * R.Z;
+            //    resultPixelOnCube.Y = vertexpixel.Y + t * R.Y;
+            //    resultPixelOnCube.Z = vertexpixel.Z + t * R.Z;
 
-                poligonFirst = originalPoligonsC[6];
-                poligonSecond = originalPoligonsC[7];
+            //    poligonFirst = originalPoligonsC[6];
+            //    poligonSecond = originalPoligonsC[7];
 
-                albedoMapCurrC = CubeBitmaps[3];
+            //    albedoMapCurrC = CubeBitmaps[3];
 
-                //"Model.obj", "bottom.jpg", "top.jpg", "left.jpg", "right.jpg", "front.jpg", "back.jpg"
-            }
+            //    //"Model.obj", "bottom.jpg", "top.jpg", "left.jpg", "right.jpg", "front.jpg", "back.jpg"
+            //}
 
-            // NEGATIVE X
-            if (!isXPositive && absX >= absY && absX >= absZ)
-            {
-                // 4 5
-                // u (0 to 1) goes from -z to +z
-                // v (0 to 1) goes from -y to +y
+            //// NEGATIVE X
+            //if (isXPositive && absX >= absY && absX >= absZ)
+            //{
+            //    // 4 5
+            //    // u (0 to 1) goes from -z to +z
+            //    // v (0 to 1) goes from -y to +y
 
-                t = -1 - (vertexpixel.X / R.X);
+            //    t = -scale - (vertexpixel.X / R.X);
 
-                resultPixelOnCube.X = -1;
-                resultPixelOnCube.Y = vertexpixel.Y + t * R.Y;
-                resultPixelOnCube.Z = vertexpixel.Z + t * R.Z;
+            //    resultPixelOnCube.X = -scale;
+            //    resultPixelOnCube.Y = vertexpixel.Y + t * R.Y;
+            //    resultPixelOnCube.Z = vertexpixel.Z + t * R.Z;
 
-                poligonFirst = originalPoligonsC[4];
-                poligonSecond = originalPoligonsC[5];
+            //    poligonFirst = originalPoligonsC[4];
+            //    poligonSecond = originalPoligonsC[5];
 
-                albedoMapCurrC = CubeBitmaps[2];
-            }
+            //    albedoMapCurrC = CubeBitmaps[2];
+            //}
 
-            // POSITIVE Y
-            if (isYPositive && absY >= absX && absY >= absZ)
-            {
-                // 2 3
-                // u (0 to 1) goes from -x to +x
-                // v (0 to 1) goes from +z to -z
+            //// POSITIVE Y
+            //if (!isYPositive && absY >= absX && absY >= absZ)
+            //{
+            //    // 2 3
+            //    // u (0 to 1) goes from -x to +x
+            //    // v (0 to 1) goes from +z to -z
 
-                t = 1 - (vertexpixel.Y / R.Y);
+            //    t = scale - (vertexpixel.Y / R.Y);
 
-                resultPixelOnCube.Y = 1;
-                resultPixelOnCube.X = vertexpixel.X + t * R.X;
-                resultPixelOnCube.Z = vertexpixel.Z + t * R.Z;
+            //    resultPixelOnCube.Y = scale;
+            //    resultPixelOnCube.X = vertexpixel.X + t * R.X;
+            //    resultPixelOnCube.Z = vertexpixel.Z + t * R.Z;
 
-                poligonFirst = originalPoligonsC[2];
-                poligonSecond = originalPoligonsC[3];
+            //    poligonFirst = originalPoligonsC[2];
+            //    poligonSecond = originalPoligonsC[3];
 
-                albedoMapCurrC = CubeBitmaps[1];
-            }
+            //    albedoMapCurrC = CubeBitmaps[1];
+            //}
 
-            // NEGATIVE Y
-            if (!isYPositive && absY >= absX && absY >= absZ)
-            {
-                // 0 1
-                // u (0 to 1) goes from -x to +x
-                // v (0 to 1) goes from -z to +z
+            //// NEGATIVE Y
+            //if (isYPositive && absY >= absX && absY >= absZ)
+            //{
+            //    // 0 1
+            //    // u (0 to 1) goes from -x to +x
+            //    // v (0 to 1) goes from -z to +z
 
-                t = -1 - (vertexpixel.Y / R.Y);
+            //    t = -scale - (vertexpixel.Y / R.Y);
 
-                resultPixelOnCube.Y = -1;
-                resultPixelOnCube.X = vertexpixel.X + t * R.X;
-                resultPixelOnCube.Z = vertexpixel.Z + t * R.Z;
+            //    resultPixelOnCube.Y = -scale;
+            //    resultPixelOnCube.X = vertexpixel.X + t * R.X;
+            //    resultPixelOnCube.Z = vertexpixel.Z + t * R.Z;
 
-                poligonFirst = originalPoligonsC[0];
-                poligonSecond = originalPoligonsC[1];
+            //    poligonFirst = originalPoligonsC[0];
+            //    poligonSecond = originalPoligonsC[1];
 
-                albedoMapCurrC = CubeBitmaps[0];
-            }
+            //    albedoMapCurrC = CubeBitmaps[0];
+            //}
 
-            // POSITIVE Z
-            if (isZPositive && absZ >= absX && absZ >= absY)
-            {
-                // 8 9
-                // u (0 to 1) goes from -x to +x
-                // v (0 to 1) goes from -y to +y
+            //// POSITIVE Z
+            //if (isZPositive && absZ >= absX && absZ >= absY)
+            //{
+            //    // 8 9
+            //    // u (0 to 1) goes from -x to +x
+            //    // v (0 to 1) goes from -y to +y
 
-                t = 1 - (vertexpixel.Z / R.Z);
+            //    t = scale - (vertexpixel.Z / R.Z);
 
-                resultPixelOnCube.Z = 1;
-                resultPixelOnCube.X = vertexpixel.X + t * R.X;
-                resultPixelOnCube.Y = vertexpixel.Y + t * R.Y;
+            //    resultPixelOnCube.Z = scale;
+            //    resultPixelOnCube.X = vertexpixel.X + t * R.X;
+            //    resultPixelOnCube.Y = vertexpixel.Y + t * R.Y;
 
-                poligonFirst = originalPoligonsC[8];
-                poligonSecond = originalPoligonsC[9];
+            //    poligonFirst = originalPoligonsC[8];
+            //    poligonSecond = originalPoligonsC[9];
 
-                albedoMapCurrC = CubeBitmaps[4];
-            }
+            //    albedoMapCurrC = CubeBitmaps[4];
+            //}
 
-            // NEGATIVE Z
-            if (!isZPositive && absZ >= absX && absZ >= absY)
-            {
-                // 10 11
-                // u (0 to 1) goes from +x to -x
-                // v (0 to 1) goes from -y to +y
+            //// NEGATIVE Z
+            //if (!isZPositive && absZ >= absX && absZ >= absY)
+            //{
+            //    // 10 11
+            //    // u (0 to 1) goes from +x to -x
+            //    // v (0 to 1) goes from -y to +y
 
-                t = -1 - (vertexpixel.Z / R.Z);
+            //    t = -scale - (vertexpixel.Z / R.Z);
 
-                resultPixelOnCube.Z = -1;
-                resultPixelOnCube.X = vertexpixel.X + t * R.X;
-                resultPixelOnCube.Y = vertexpixel.Y + t * R.Y;
+            //    resultPixelOnCube.Z = -scale;
+            //    resultPixelOnCube.X = vertexpixel.X + t * R.X;
+            //    resultPixelOnCube.Y = vertexpixel.Y + t * R.Y;
 
-                poligonFirst = originalPoligonsC[10];
-                poligonSecond = originalPoligonsC[11];
+            //    poligonFirst = originalPoligonsC[10];
+            //    poligonSecond = originalPoligonsC[11];
 
-                albedoMapCurrC = CubeBitmaps[5];
-            }
+            //    albedoMapCurrC = CubeBitmaps[5];
+            //}
 
-            var matrixFirst = FromViewPortCoordinates();
-            var matrixSecond = FromProjectionCoordinates();
+            ////var matrixFirst = FromViewPortCoordinates();
+            ////var matrixSecond = FromProjectionCoordinates();
 
-            var C = vertices[poligonFirst[0][0] - 1];
-            C = new Vector4(C.X, C.Y, C.Z, C.W);
-            var B = vertices[poligonFirst[1][0] - 1];
-            B = new Vector4(B.X, B.Y, B.Z, B.W);
-            var A = vertices[poligonFirst[2][0] - 1];
-            A = new Vector4(A.X, A.Y, A.Z, A.W);
+            ////var C = vertices[poligonFirst[0][0] - 1];
+            ////C = new Vector4(C.X, C.Y, C.Z, C.W);
+            ////var B = vertices[poligonFirst[1][0] - 1];
+            ////B = new Vector4(B.X, B.Y, B.Z, B.W);
+            ////var A = vertices[poligonFirst[2][0] - 1];
+            ////A = new Vector4(A.X, A.Y, A.Z, A.W);
 
-            A = Vector4.Transform(A, matrixFirst);
-            A = Vector4.Transform(A, matrixSecond);
-            A /= A.W;
+            ////A = Vector4.Transform(A, matrixFirst);
+            ////A = Vector4.Transform(A, matrixSecond);
+            ////A /= A.W;
 
-            B = Vector4.Transform(B, matrixFirst);
-            B = Vector4.Transform(B, matrixSecond);
-            B /= B.W;
+            ////B = Vector4.Transform(B, matrixFirst);
+            ////B = Vector4.Transform(B, matrixSecond);
+            ////B /= B.W;
 
-            C = Vector4.Transform(C, matrixFirst);
-            C = Vector4.Transform(C, matrixSecond);
-            C /= C.W;
+            ////C = Vector4.Transform(C, matrixFirst);
+            ////C = Vector4.Transform(C, matrixSecond);
+            ////C /= C.W;
 
             //var a1 = Vector3.Transform(new Vector3(C.X, C.Y, C.Z), matrix);
             //var a2 = Vector3.Transform(new Vector3(B.X, B.Y, B.Z), matrix);
             //var a3 = Vector3.Transform(new Vector3(A.X, A.Y, A.Z), matrix);
 
-            var a1 = C;
-            var a2 = B;
-            var a3 = A;
+            ////var a1 = C;
+            ////var a2 = B;
+            ////var a3 = A;
 
-            float firstCheck = (a1.X - resultPixelOnCube.X) * (a2.Y - a1.Y) -
-                               (a2.X - a1.X) * (a1.Y - resultPixelOnCube.Y);
+            ////float firstCheck = (a1.X - resultPixelOnCube.X) * (a2.Y - a1.Y) -
+            ////                   (a2.X - a1.X) * (a1.Y - resultPixelOnCube.Y);
 
-            float secondCheck = (a2.X - resultPixelOnCube.X) * (a3.Y - a2.Y) -
-                                (a3.X - a2.X) * (a2.Y - resultPixelOnCube.Y);
+            ////float secondCheck = (a2.X - resultPixelOnCube.X) * (a3.Y - a2.Y) -
+            ////                    (a3.X - a2.X) * (a2.Y - resultPixelOnCube.Y);
 
-            float thirdCheck = (a3.X - resultPixelOnCube.X) * (a1.Y - a3.Y) -
-                               (a1.X - a3.X) * (a3.Y - resultPixelOnCube.Y);
+            ////float thirdCheck = (a3.X - resultPixelOnCube.X) * (a1.Y - a3.Y) -
+            ////                   (a1.X - a3.X) * (a3.Y - resultPixelOnCube.Y);
 
-            int[][] resultPoligonOnCube;
+            ////int[][] resultPoligonOnCube;
 
-            if (firstCheck >= 0 && secondCheck >= 0 && thirdCheck >= 0)
-            {
-                resultPoligonOnCube = poligonFirst;
-            }
-            else
-            {
-                resultPoligonOnCube = poligonSecond;
-            }
+            ////if (firstCheck >= 0 && secondCheck >= 0 && thirdCheck >= 0)
+            ////{
+            ////    resultPoligonOnCube = poligonFirst;
+            ////}
+            ////else
+            ////{
+            ////    resultPoligonOnCube = poligonSecond;
+            ////}
 
-            C = verticesC[resultPoligonOnCube[0][0] - 1];
-            B = verticesC[resultPoligonOnCube[1][0] - 1];
-            A = verticesC[resultPoligonOnCube[2][0] - 1];
+            ////C = verticesC[resultPoligonOnCube[0][0] - 1];
+            ////B = verticesC[resultPoligonOnCube[1][0] - 1];
+            ////A = verticesC[resultPoligonOnCube[2][0] - 1];
 
-            A.W = Wbuf[resultPoligonOnCube[2][0] - 1];
-            B.W = Wbuf[resultPoligonOnCube[1][0] - 1];
-            C.W = Wbuf[resultPoligonOnCube[0][0] - 1];
+            ////A.W = Wbuf[resultPoligonOnCube[2][0] - 1];
+            ////B.W = Wbuf[resultPoligonOnCube[1][0] - 1];
+            ////C.W = Wbuf[resultPoligonOnCube[0][0] - 1];
 
-            var Ctexture = textureVerticesC[resultPoligonOnCube[0][1] - 1];
-            var Btexture = textureVerticesC[resultPoligonOnCube[1][1] - 1];
-            var Atexture = textureVerticesC[resultPoligonOnCube[2][1] - 1];
+            ////var Ctexture = textureVerticesC[resultPoligonOnCube[0][1] - 1];
+            ////var Btexture = textureVerticesC[resultPoligonOnCube[1][1] - 1];
+            ////var Atexture = textureVerticesC[resultPoligonOnCube[2][1] - 1];
 
             //Atexture /= A.W;
             //Atexture.Z = 1 / A.W;
@@ -1542,27 +1586,27 @@ namespace WinForms3DModelViewer
             //var matrixFirst = FromViewPortCoordinates();
             //var matrixSecond = FromProjectionCoordinates();
 
-            C = vertices[resultPoligonOnCube[0][0] - 1];
-            C = new Vector4(C.X, C.Y, C.Z, C.W);
-            B = vertices[resultPoligonOnCube[1][0] - 1];
-            B = new Vector4(B.X, B.Y, B.Z, B.W);
-            A = vertices[resultPoligonOnCube[2][0] - 1];
-            A = new Vector4(A.X, A.Y, A.Z, A.W);
+            ////C = vertices[resultPoligonOnCube[0][0] - 1];
+            ////C = new Vector4(C.X, C.Y, C.Z, C.W);
+            ////B = vertices[resultPoligonOnCube[1][0] - 1];
+            ////B = new Vector4(B.X, B.Y, B.Z, B.W);
+            ////A = vertices[resultPoligonOnCube[2][0] - 1];
+            ////A = new Vector4(A.X, A.Y, A.Z, A.W);
 
-            A = Vector4.Transform(A, matrixFirst);
-            A = Vector4.Transform(A, matrixSecond);
-            A /= A.W;
+            ////A = Vector4.Transform(A, matrixFirst);
+            ////A = Vector4.Transform(A, matrixSecond);
+            ////A /= A.W;
 
-            B = Vector4.Transform(B, matrixFirst);
-            B = Vector4.Transform(B, matrixSecond);
-            B /= B.W;
+            ////B = Vector4.Transform(B, matrixFirst);
+            ////B = Vector4.Transform(B, matrixSecond);
+            ////B /= B.W;
 
-            C = Vector4.Transform(C, matrixFirst);
-            C = Vector4.Transform(C, matrixSecond);
-            C /= C.W;
+            ////C = Vector4.Transform(C, matrixFirst);
+            ////C = Vector4.Transform(C, matrixSecond);
+            ////C /= C.W;
 
 
-            var pixelTextureKoef = LinearInterpolationCube(A, B, C, resultPixelOnCube, Atexture, Btexture, Ctexture);
+            ////pixelTextureKoef = LinearInterpolationCube(A, B, C, resultPixelOnCube, Atexture, Btexture, Ctexture);
             //var baricentrikCoord = CountSystemOfEquations(A, B, C, pixelVector);
 
 
