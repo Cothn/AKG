@@ -16,10 +16,10 @@ namespace WinForms3DModelViewer
     {
         private string FilesPath;
 
-        private const string FilesPathM = @"D:\Github projects\AKG\Church\";
+        private const string FilesPathM = @"D:\RepositHub\AKG\Church\";
         //private const string FilesPathM = @"D:\RepositHub\AKG\Head\";
 
-        private const string FilesPathC = @"D:\Github projects\AKG\Skybox\";
+        private const string FilesPathC = @"D:\RepositHub\AKG\Skybox\";
         //private const string FilesPathC = @"D:\RepositHub\AKG\Skybox\";
 
         private List<string> filesNames;
@@ -287,6 +287,33 @@ namespace WinForms3DModelViewer
                 //}
             }
             
+            //Wbuf = new float[vertices.Count];
+            // Чтобы завершить преобразование, нужно разделить каждую компоненту век-тора на компонент 
+
+/*
+            var fromProjectionMatrix = FromProjectionCoordinates();
+            TransformVectors(fromProjectionMatrix);
+            //TransformNormals(projectionMatrix);
+            TransformNormals4(fromProjectionMatrix);
+
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                Wbuf[i] = vertices[i].W;
+
+                //if (!isModel)
+                //{
+                //    Wbuf[i] *= 5;
+                //}
+                var tmpV = vertices[i] / Wbuf[i];
+                //tmpV.W = Wbuf[i];
+                vertices[i] = tmpV;
+                //if (!isModel)
+                //{
+                //    vertices[i] *= 10;
+                //}
+            }
+*/
+            
 
             projectionVertices = new List<Vector4>(vertices);
 
@@ -476,6 +503,27 @@ namespace WinForms3DModelViewer
                                                    0, 0, m23, 0);
             
             return projectionMatrix;
+        }
+        
+        public Matrix4x4 FromProjectionCoordinates()
+        {
+            var zNear = 0.2f;
+            var zFar = 15;
+            var aspect = pictureBoxPaintArea.Width / (float)pictureBoxPaintArea.Height;
+            var fov = (float)Math.PI * (60) / 180;
+
+            var m00 = 1 / (aspect * (float)Math.Tan(fov / 2));
+            var m11 = 1 / (float)Math.Tan(fov / 2);
+            var m22 = zFar / (zNear - zFar);
+            var m23 = (zNear * zFar) / (zNear - zFar);
+
+            var projectionMatrix = new Matrix4x4(m00, 0, 0, 0,
+                0, m11, 0, 0,
+                0, 0, m22, -1,
+                0, 0, m23, 0);
+
+            Matrix4x4.Invert(projectionMatrix, out var koefMatrix);
+            return koefMatrix;
         }
 
         public Matrix4x4 ToProjectionCoordinatesCube()
@@ -844,6 +892,7 @@ namespace WinForms3DModelViewer
 
             bm = new Bitmap(width, height);
 
+
             IsModelNow = false;
 
 
@@ -863,84 +912,85 @@ namespace WinForms3DModelViewer
 
             using (var gr = Graphics.FromImage(bm))
             {
+                
                 //gr.Clear(Color.WhiteSmoke);
                 gr.Clear(Color.Black);
-
-                var albedoBuf = albedoMap;
-
-                int poligonN = 0;
-                int albedoN = 1;
-
-                //albedoForCube = new List<bool>() { true, true, true, true, true, true, true, true, true, true, true, true};
-
-                while (!albedoForCube[albedoN * 2 - 1])
-                {
-                    albedoN++;
-
-                    if ((albedoN * 2 - 1) >= albedoForCube.Count)
-                    {
-                        break;
-                    }
-                }
-
-                albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
-
-                foreach (var poligon in poligons)
-                {
-                    if (poligonN == 2)
-                    {
-                        poligonN = 0;
-                        albedoN++;
-
-                        if ((albedoN * 2 - 1) >= albedoForCube.Count)
-                        {
-                            break;
-                        }
-
-                        while (!albedoForCube[albedoN * 2 - 1])
-                        {
-                            albedoN++;
-
-                            if ((albedoN * 2 - 1) >= albedoForCube.Count)
-                            {
-                                break;
-                            }
-                        }
-
-                        if ((albedoN * 2 - 1) >= albedoForCube.Count)
-                        {
-                            break;
-                        }
-
-                        albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
-                    }
-
-                    float yMax = float.MinValue;
-                    int indexMax = -1;
-                    float yMin = float.MaxValue;
-                    int indexMin = -1;
-                    float poligonColorScale;
-                    Vector3 poligonColor;
-
-                    for (int i = 0; i < poligon.Length; i++)
-                    {
-                        var k = poligon[i][0] - 1;
-                        var j = poligon[(i + 1) % poligon.Length][0] - 1;
-
-                        var X1 = (vertices[k].X);
-                        var X2 = (vertices[j].X);
-                        var Y1 = (vertices[k].Y);
-                        var Y2 = (vertices[j].Y);
-                        var Z1 = (vertices[k].Z);
-                        var Z2 = (vertices[j].Z);
-                    }
-
-                    DrawTriangle(poligon, gr);
-
-                    poligonN++;
-                };
-
-
+                
+                    var albedoBuf = albedoMap;
+                    /*
+                                    int poligonN = 0;
+                                    int albedoN = 1;
+                    
+                                    //albedoForCube = new List<bool>() { true, true, true, true, true, true, true, true, true, true, true, true};
+                    
+                                    while (!albedoForCube[albedoN * 2 - 1])
+                                    {
+                                        albedoN++;
+                    
+                                        if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                                        {
+                                            break;
+                                        }
+                                    }
+                    
+                                    albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
+                    
+                                    foreach (var poligon in poligons)
+                                    {
+                                        if (poligonN == 2)
+                                        {
+                                            poligonN = 0;
+                                            albedoN++;
+                    
+                                            if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                                            {
+                                                break;
+                                            }
+                    
+                                            while (!albedoForCube[albedoN * 2 - 1])
+                                            {
+                                                albedoN++;
+                    
+                                                if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                                                {
+                                                    break;
+                                                }
+                                            }
+                    
+                                            if ((albedoN * 2 - 1) >= albedoForCube.Count)
+                                            {
+                                                break;
+                                            }
+                    
+                                            albedoMap = new Bitmap(FilesPathC + filesNamesC[albedoN]);
+                                        }
+                    
+                                        float yMax = float.MinValue;
+                                        int indexMax = -1;
+                                        float yMin = float.MaxValue;
+                                        int indexMin = -1;
+                                        float poligonColorScale;
+                                        Vector3 poligonColor;
+                    
+                                        for (int i = 0; i < poligon.Length; i++)
+                                        {
+                                            var k = poligon[i][0] - 1;
+                                            var j = poligon[(i + 1) % poligon.Length][0] - 1;
+                    
+                                            var X1 = (vertices[k].X);
+                                            var X2 = (vertices[j].X);
+                                            var Y1 = (vertices[k].Y);
+                                            var Y2 = (vertices[j].Y);
+                                            var Z1 = (vertices[k].Z);
+                                            var Z2 = (vertices[j].Z);
+                                        }
+                    
+                                        DrawTriangle(poligon, gr);
+                    
+                                        poligonN++;
+                                    };
+                    
+                    */
                 albedoMap = albedoBuf;
 
                 vertices = verticesM;
