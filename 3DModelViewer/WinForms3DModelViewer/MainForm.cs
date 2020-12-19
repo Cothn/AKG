@@ -16,10 +16,10 @@ namespace WinForms3DModelViewer
     {
         private string FilesPath;
 
-        private const string FilesPathM = @"D:\RepositHub\AKG\Church\";
+        private const string FilesPathM = @"D:\Github projects\AKG\Church\";
         //private const string FilesPathM = @"D:\RepositHub\AKG\Head\";
 
-        private const string FilesPathC = @"D:\RepositHub\AKG\Skybox\";
+        private const string FilesPathC = @"D:\Github projects\AKG\Skybox\";
         //private const string FilesPathC = @"D:\RepositHub\AKG\Skybox\";
 
         private List<string> filesNames;
@@ -192,7 +192,7 @@ namespace WinForms3DModelViewer
             }
             else
             {
-                rm = Matrix4x4.CreateFromYawPitchRoll((-yRotation % 360) * k, (-xRotation % 360) * k, (-zRotation % 360) * k);
+                rm = Matrix4x4.CreateFromYawPitchRoll((yRotation % 360) * k, (xRotation % 360) * k, (zRotation % 360) * k);
                 //rm.M41 = 0;
                 //rm.M42 = 0;
                 //rm.M43 = 0;
@@ -264,7 +264,7 @@ namespace WinForms3DModelViewer
 
             TransformVectors(projectionMatrix);
             //TransformNormals(projectionMatrix);
-            TransformNormals4(projectionMatrix);
+            //TransformNormals4(projectionMatrix);
 
 
             Wbuf = new float[vertices.Count];
@@ -778,10 +778,10 @@ namespace WinForms3DModelViewer
                                     (diffuseAndAmbientKoef.X, diffuseAndAmbientKoef.Y, diffuseAndAmbientKoef.Z) = (albedoColor.R, albedoColor.G, albedoColor.B);
                                 }
 
+                                //Vector3 pixelNormal;
+                                Vector3 pixelNormal = new Vector3(0,0,0);
 
-                                Vector3 pixelNormal;
-
-                                if (isNormalMap && IsModelNow)
+                                if (isNormalMap)
                                 {
                                     pixelTexture.X = pixelTextureKoef.X * normalMap.Width;
                                     pixelTexture.Y = pixelTextureKoef.Y * normalMap.Height;
@@ -823,7 +823,69 @@ namespace WinForms3DModelViewer
                                 }
                                 else
                                 {
-                                    pixelNormal = LinearInterpolation(A, B, C, pixelVector, Anormal, Bnormal, Cnormal);
+                                    if (IsModelNow)
+                                    {
+                                        var matrixFirst = FromViewPortCoordinates();
+                                        var matrixSecond = FromProjectionCoordinates();
+
+                                        var kek = vertices[sortedPoligonVertices[0][0] - 1].X;
+
+                                        var Cc = vertices[sortedPoligonVertices[0][0] - 1];
+                                        //Cc = new Vector4(Cc.X, Cc.Y, Cc.Z, Cc.W);
+                                        var Bb = vertices[sortedPoligonVertices[1][0] - 1];
+                                        //B = new Vector4(B.X, B.Y, B.Z, B.W);
+                                        var Aa = vertices[sortedPoligonVertices[2][0] - 1];
+                                        //A = new Vector4(A.X, A.Y, A.Z, A.W);
+
+                                        Aa = Vector4.Transform(Aa, matrixFirst);
+                                        Aa = Vector4.Transform(Aa, matrixSecond);
+                                        Aa /= Aa.W;
+
+                                        Bb = Vector4.Transform(Bb, matrixFirst);
+                                        Bb = Vector4.Transform(Bb, matrixSecond);
+                                        Bb /= Bb.W;
+
+                                        Cc = Vector4.Transform(Cc, matrixFirst);
+                                        Cc = Vector4.Transform(Cc, matrixSecond);
+                                        Cc /= Cc.W;
+
+                                        if (kek != vertices[sortedPoligonVertices[0][0] - 1].X)
+                                        {
+                                            kek = kek++;
+                                        }
+
+                                        var vector1 = Bb - Aa;
+                                        var vector2 = Cc - Aa;
+                                        Anormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                                            (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                                            (vector1.X * vector2.Y - vector1.Y * vector2.X));
+
+                                        vector1 = Aa - Bb;
+                                        vector2 = Cc - Bb;
+                                        Bnormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                                            (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                                            (vector1.X * vector2.Y - vector1.Y * vector2.X));
+
+                                        vector1 = Aa - Cc;
+                                        vector2 = Bb - Cc;
+                                        Cnormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                                            (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                                            (vector1.X * vector2.Y - vector1.Y * vector2.X));
+
+
+                                        pixelVector = Vector4.Transform(pixelVector, matrixFirst);
+                                        pixelVector = Vector4.Transform(pixelVector, matrixSecond);
+                                        pixelVector /= pixelVector.W;
+
+                                        pixelNormal = LinearInterpolationMReflect(Aa, Bb, Cc, pixelVector, Anormal, Bnormal,
+                                            Cnormal);
+
+                                        //vector1 = vertices[poligon[1][0] - 1] - vertices[poligon[0][0] - 1];
+                                        //vector2 = vertices[poligon[2][0] - 1] - vertices[poligon[0][0] - 1];
+                                        //pixelNormal = new Vector3((vector1.Y * vector2.Z - vector1.Z * vector2.Y),
+                                        //    (vector1.Z * vector2.X - vector1.X * vector2.Z),
+                                        //    (vector1.X * vector2.Y - vector1.Y * vector2.X));
+                                    }
                                 }
 
 
@@ -857,15 +919,15 @@ namespace WinForms3DModelViewer
 
                                     color = CountReflectTextureOnModel(pixelNormal, pixelVector);
 
-                                    brush = new SolidBrush(Color.FromArgb((int) Math.Min(color.X, 255),
-                                        (int) Math.Min(color.Y, 255), (int) Math.Min(color.Z, 255)));
+                                    brush = new SolidBrush(Color.FromArgb((int)Math.Min(color.X, 255),
+                                        (int)Math.Min(color.Y, 255), (int)Math.Min(color.Z, 255)));
                                 }
                                 else
                                 {
                                     brush = new SolidBrush(albedoColor);
                                 }
 
-
+                                //brush = new SolidBrush(Color.Blue);
                                 bm.FillRectangle(brush, x, y, pointWidth, pointHeight);
                             }
                             else
@@ -1256,11 +1318,12 @@ namespace WinForms3DModelViewer
 
             var matrix = FromViewPortCoordinates();
             var vertexpixel = new Vector3(vertexpixel4.X, vertexpixel4.Y, vertexpixel4.Z);
-            vertexpixel = Vector3.Transform(vertexpixel, matrix);
+            //vertexpixel = Vector3.Transform(vertexpixel, matrix);
 
             //vertexpixel = new Vector3(0, 0, 0);
 
-            Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexpixel;
+            //Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexpixel;
+            Vector3 eyeDirection = new Vector3(0, 0, 0) - vertexpixel;
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
             Vector3 N = Vector3.Normalize(vertexNormal);
@@ -1407,13 +1470,35 @@ namespace WinForms3DModelViewer
                 albedoMapCurrC = CubeBitmaps[5];
             }
 
-            var C = verticesC[poligonFirst[0][0] - 1];
-            var B = verticesC[poligonFirst[1][0] - 1];
-            var A = verticesC[poligonFirst[2][0] - 1];
+            var matrixFirst = FromViewPortCoordinates();
+            var matrixSecond = FromProjectionCoordinates();
 
-            var a1 = Vector3.Transform(new Vector3(C.X, C.Y, C.Z), matrix);
-            var a2 = Vector3.Transform(new Vector3(B.X, B.Y, B.Z), matrix);
-            var a3 = Vector3.Transform(new Vector3(A.X, A.Y, A.Z), matrix);
+            var C = vertices[poligonFirst[0][0] - 1];
+            C = new Vector4(C.X, C.Y, C.Z, C.W);
+            var B = vertices[poligonFirst[1][0] - 1];
+            B = new Vector4(B.X, B.Y, B.Z, B.W);
+            var A = vertices[poligonFirst[2][0] - 1];
+            A = new Vector4(A.X, A.Y, A.Z, A.W);
+
+            A = Vector4.Transform(A, matrixFirst);
+            A = Vector4.Transform(A, matrixSecond);
+            A /= A.W;
+
+            B = Vector4.Transform(B, matrixFirst);
+            B = Vector4.Transform(B, matrixSecond);
+            B /= B.W;
+
+            C = Vector4.Transform(C, matrixFirst);
+            C = Vector4.Transform(C, matrixSecond);
+            C /= C.W;
+
+            //var a1 = Vector3.Transform(new Vector3(C.X, C.Y, C.Z), matrix);
+            //var a2 = Vector3.Transform(new Vector3(B.X, B.Y, B.Z), matrix);
+            //var a3 = Vector3.Transform(new Vector3(A.X, A.Y, A.Z), matrix);
+
+            var a1 = C;
+            var a2 = B;
+            var a3 = A;
 
             float firstCheck = (a1.X - resultPixelOnCube.X) * (a2.Y - a1.Y) -
                                (a2.X - a1.X) * (a1.Y - resultPixelOnCube.Y);
@@ -1447,24 +1532,41 @@ namespace WinForms3DModelViewer
             var Btexture = textureVerticesC[resultPoligonOnCube[1][1] - 1];
             var Atexture = textureVerticesC[resultPoligonOnCube[2][1] - 1];
 
-            Atexture /= A.W;
-            Atexture.Z = 1 / A.W;
-            Btexture /= B.W;
-            Btexture.Z = 1 / B.W;
-            Ctexture /= C.W;
-            Ctexture.Z = 1 / C.W;
+            //Atexture /= A.W;
+            //Atexture.Z = 1 / A.W;
+            //Btexture /= B.W;
+            //Btexture.Z = 1 / B.W;
+            //Ctexture /= C.W;
+            //Ctexture.Z = 1 / C.W;
 
-            a1 = Vector3.Transform(new Vector3(C.X, C.Y, C.Z), matrix);
-            a2 = Vector3.Transform(new Vector3(B.X, B.Y, B.Z), matrix);
-            a3 = Vector3.Transform(new Vector3(A.X, A.Y, A.Z), matrix);
+            //var matrixFirst = FromViewPortCoordinates();
+            //var matrixSecond = FromProjectionCoordinates();
+
+            C = vertices[resultPoligonOnCube[0][0] - 1];
+            C = new Vector4(C.X, C.Y, C.Z, C.W);
+            B = vertices[resultPoligonOnCube[1][0] - 1];
+            B = new Vector4(B.X, B.Y, B.Z, B.W);
+            A = vertices[resultPoligonOnCube[2][0] - 1];
+            A = new Vector4(A.X, A.Y, A.Z, A.W);
+
+            A = Vector4.Transform(A, matrixFirst);
+            A = Vector4.Transform(A, matrixSecond);
+            A /= A.W;
+
+            B = Vector4.Transform(B, matrixFirst);
+            B = Vector4.Transform(B, matrixSecond);
+            B /= B.W;
+
+            C = Vector4.Transform(C, matrixFirst);
+            C = Vector4.Transform(C, matrixSecond);
+            C /= C.W;
 
 
             var pixelTextureKoef = LinearInterpolationCube(A, B, C, resultPixelOnCube, Atexture, Btexture, Ctexture);
             //var baricentrikCoord = CountSystemOfEquations(A, B, C, pixelVector);
 
-            //if (IsModelNow)
-            //{
-            pixelTextureKoef /= pixelTextureKoef.Z;
+
+            //pixelTextureKoef /= pixelTextureKoef.Z;
 
             Color albedoColor = Color.Blue;
 
@@ -1478,18 +1580,18 @@ namespace WinForms3DModelViewer
                 : (pixelTexture.X >= albedoMapCurrC.Width ? albedoMapCurrC.Width - 1 : pixelTexture.X);
 
 
-            pixelTexture.Y = pixelTexture.Y < 1
-                ? 1
-                : (pixelTexture.Y >= albedoMapCurrC.Height ? albedoMapCurrC.Height : pixelTexture.Y);
+            //pixelTexture.Y = pixelTexture.Y < 1
+            //    ? 1
+            //    : (pixelTexture.Y >= albedoMapCurrC.Height ? albedoMapCurrC.Height : pixelTexture.Y);
 
-            albedoColor = albedoMapCurrC.GetPixel((int)pixelTexture.X, albedoMapCurrC.Height - (int)pixelTexture.Y);
+            //albedoColor = albedoMapCurrC.GetPixel((int)pixelTexture.X, albedoMapCurrC.Height - (int)pixelTexture.Y);
 
 
-            //pixelTexture.Y = pixelTexture.Y < 0
-            //    ? 0
-            //    : (pixelTexture.Y >= albedoMapCurrC.Height ? albedoMapCurrC.Height - 1 : pixelTexture.Y);
+            pixelTexture.Y = pixelTexture.Y < 0
+                ? 0
+                : (pixelTexture.Y >= albedoMapCurrC.Height ? albedoMapCurrC.Height - 1 : pixelTexture.Y);
 
-            //albedoColor = albedoMapCurrC.GetPixel((int)pixelTexture.X, (int)pixelTexture.Y);
+            albedoColor = albedoMapCurrC.GetPixel((int)pixelTexture.X, (int)pixelTexture.Y);
 
 
             resultColor = new Vector3(albedoColor.R, albedoColor.G, albedoColor.B);
@@ -1624,6 +1726,21 @@ namespace WinForms3DModelViewer
             return normal;
         }
 
+
+        private Vector3 LinearInterpolationMReflect(Vector4 a1, Vector4 a2, Vector4 a3, Vector4 b, Vector3 n1, Vector3 n2, Vector3 n3)
+        {
+
+
+            var koeffs = CountSystemOfEquationsCube(a1, a2, a3, new Vector3(b.X, b.Y, b.Z));
+
+            var normal = koeffs.X * n1 + koeffs.Y * n2 + koeffs.Z * n3;
+
+            //var matrix = FromViewPortCoordinates();
+            //var vertexpixel = normal;
+            //normal =  Vector3.Transform(normal, matrix);
+
+            return normal;
+        }
 
         private Vector3 LinearInterpolationCube(Vector4 a1, Vector4 a2, Vector4 a3, Vector3 b, Vector3 n1, Vector3 n2, Vector3 n3)
         {
