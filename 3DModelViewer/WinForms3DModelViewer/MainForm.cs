@@ -16,11 +16,11 @@ namespace WinForms3DModelViewer
     {
         private string FilesPath;
 
-        private const string FilesPathM = @"D:\Github projects\AKG\Head\";
-        //private const string FilesPathM = @"D:\RepositHub\AKG\Head\";
+            //private const string FilesPathM = @"D:\Github projects\AKG\Head\";
+        private const string FilesPathM = @"D:\RepositHub\AKG\diablo\";
 
-        private const string FilesPathC = @"D:\Github projects\AKG\Skybox\";
-        //private const string FilesPathC = @"D:\RepositHub\AKG\Skybox\";
+            //private const string FilesPathC = @"D:\Github projects\AKG\Skybox\";
+        private const string FilesPathC = @"D:\RepositHub\AKG\Skybox\";
 
         private List<string> filesNames;
 
@@ -104,6 +104,7 @@ namespace WinForms3DModelViewer
         public bool IsModelNow;
         public List<bool> albedoForCube = new List<bool>();
         public List<Bitmap> CubeBitmaps;
+        public Matrix4x4 fromView;
 
         public MainForm()
         {
@@ -1328,7 +1329,7 @@ namespace WinForms3DModelViewer
             //vertexpixel = new Vector3(0, 0, 0);
 
             //Vector3 eyeDirection = new Vector3(eyePoint.X, eyePoint.Y, eyePoint.Z) - vertexpixel;
-            Vector3 eyeDirection = new Vector3(0, 0, 1) - vertexpixel;
+            Vector3 eyeDirection = new Vector3(0, 0, 0) - vertexpixel;
             //Vector3 eyeDirection = new Vector3(0,0,-1);
             Vector3 eyeVector = Vector3.Normalize(eyeDirection);
 
@@ -1358,6 +1359,10 @@ namespace WinForms3DModelViewer
             Bitmap albedoMapCurrC = new Bitmap(1,1);
 
             int scale = 1;
+
+            int index;
+            float u, v;
+            (index, u, v) = convert_xyz_to_cube_uv(R.X, R.Y, R.Z);
 
             int faceIndex;
             float ma;
@@ -1390,9 +1395,12 @@ namespace WinForms3DModelViewer
 
             Vector3 pixelTextureKoef;
 
+            
             pixelTextureKoef = new Vector3(koeff.X, koeff.Y, 1);
             albedoMapCurrC = CubeBitmaps[faceIndex];
-
+            
+            //pixelTextureKoef = new Vector3(u, v, 1);
+            //albedoMapCurrC = CubeBitmaps[index];
             // POSITIVE X
             //if (!isXPositive && absX >= absY && absX >= absZ)
             //{
@@ -1623,13 +1631,13 @@ namespace WinForms3DModelViewer
                 ? 0
                 : (pixelTexture.X >= albedoMapCurrC.Width ? albedoMapCurrC.Width - 1 : pixelTexture.X);
 
+/*
+            pixelTexture.Y = pixelTexture.Y < 1
+                ? 1
+                : (pixelTexture.Y >= albedoMapCurrC.Height ? albedoMapCurrC.Height : pixelTexture.Y);
 
-            //pixelTexture.Y = pixelTexture.Y < 1
-            //    ? 1
-            //    : (pixelTexture.Y >= albedoMapCurrC.Height ? albedoMapCurrC.Height : pixelTexture.Y);
-
-            //albedoColor = albedoMapCurrC.GetPixel((int)pixelTexture.X, albedoMapCurrC.Height - (int)pixelTexture.Y);
-
+            albedoColor = albedoMapCurrC.GetPixel((int)pixelTexture.X, albedoMapCurrC.Height - (int)pixelTexture.Y);
+*/
 
             pixelTexture.Y = pixelTexture.Y < 0
                 ? 0
@@ -1732,6 +1740,81 @@ namespace WinForms3DModelViewer
             //normal =  Vector3.Transform(normal, matrix);
 
             return new Vector3(u, v, 0);
+        }
+        
+        (int index, float u, float v) convert_xyz_to_cube_uv(float x, float y, float z)
+        {
+            float absX = Math.Abs(x);
+            float absY = Math.Abs(y);
+            float absZ = Math.Abs(z);
+  
+            bool isXPositive = x > 0;
+            bool isYPositive = y > 0;
+            bool isZPositive = z > 0;
+  
+            float maxAxis = 0, uc = 0, vc = 0;
+            int index = 0;
+            // POSITIVE X
+            if (isXPositive && absX >= absY && absX >= absZ) {
+                // u (0 to 1) goes from +z to -z
+                // v (0 to 1) goes from -y to +y
+                maxAxis = absX;
+                uc = -z;
+                vc = y;
+                index = 0;
+            }
+            // NEGATIVE X
+            if (!isXPositive && absX >= absY && absX >= absZ) {
+                // u (0 to 1) goes from -z to +z
+                // v (0 to 1) goes from -y to +y
+                maxAxis = absX;
+                uc = z;
+                vc = y;
+                index = 1;
+            }
+            // POSITIVE Y
+            if (isYPositive && absY >= absX && absY >= absZ) {
+                // u (0 to 1) goes from -x to +x
+                // v (0 to 1) goes from +z to -z
+                maxAxis = absY;
+                uc = x;
+                vc = -z;
+                index = 2;
+            }
+            // NEGATIVE Y
+            if (!isYPositive && absY >= absX && absY >= absZ) {
+                // u (0 to 1) goes from -x to +x
+                // v (0 to 1) goes from -z to +z
+                maxAxis = absY;
+                uc = x;
+                vc = z;
+                index = 3;
+            }
+            // POSITIVE Z
+            if (isZPositive && absZ >= absX && absZ >= absY) {
+                // u (0 to 1) goes from -x to +x
+                // v (0 to 1) goes from -y to +y
+                maxAxis = absZ;
+                uc = x;
+                vc = y;
+                index = 4;
+            }
+            // NEGATIVE Z
+            if (!isZPositive && absZ >= absX && absZ >= absY) {
+                // u (0 to 1) goes from +x to -x
+                // v (0 to 1) goes from -y to +y
+                maxAxis = absZ;
+                uc = -x;
+                vc = y;
+                index = 5;
+            }
+
+            float u, v;
+            // Convert range from -1 to 1 to 0 to 1
+            u = 0.5f * (uc / maxAxis + 1.0f);
+            v = 0.5f * (vc / maxAxis + 1.0f);
+
+            return (index, u, v);
         }
 
         private float getLineLength(Vector4 a1, Vector4 a2)
@@ -1953,7 +2036,7 @@ namespace WinForms3DModelViewer
                 ;
                 if (Keyboard.IsKeyDown(Keys.Z))
                 {
-                    viewPoint.Z += delta;
+                    viewPoint.Z += lDelta;
                     neadDrow = true;
                 }
 
@@ -1963,7 +2046,7 @@ namespace WinForms3DModelViewer
                     if (viewPoint.Z - delta < 0)
                         return;
 
-                    viewPoint.Z -= delta;
+                    viewPoint.Z -= lDelta;
                     neadDrow = true;
                 }
 
